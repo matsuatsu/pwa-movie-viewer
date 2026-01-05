@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-labelledby="title desc">
+  <title id="title">Golf Swing Analyzer Icon</title>
+  <desc id="desc">Minimal line art golf swing icon for the PWA</desc>
+  <rect width="192" height="192" rx="32" fill="#0f172a"/>
+  <path d="M52 140c18-18 30-38 46-64l-26-14m36 62c12 0 22-10 22-22s-10-22-22-22-22 10-22 22 10 22 22 22Z" stroke="#22c55e" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="122" cy="72" r="14" fill="#22d3ee"/>
+</svg>
