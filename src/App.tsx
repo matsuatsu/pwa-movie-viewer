@@ -579,43 +579,24 @@ function App() {
   };
 
   const mapping = [
-    { before: 'Seek bar (edge of screen)', after: 'Bottom bar Row A with padded hit area' },
-    { before: 'Play/Pause (toolbar)', after: 'Bottom bar Row B large primary button' },
-    { before: 'Prev/Next frame (toolbar)', after: 'Bottom bar Row B frame-step buttons' },
-    { before: 'Mode buttons (floating/edge)', after: 'Bottom bar Row B single Draw/Edit toggle' },
-    { before: 'Delete / Redo floating near bottom', after: 'More sheet actions list' },
-    { before: 'Upload (top bar only)', after: 'Top icon + More sheet "Video" section' }
+    { before: 'Draw/Edit + line tools in bottom bar', after: 'Moved to compact Top Bar chips' },
+    { before: 'Undo/Redo inside bottom bar/More', after: 'Top Bar undo/redo alongside mode' },
+    { before: 'Delete selected in sheet', after: 'Dedicated Top Bar delete (selected only)' },
+    { before: 'Speed change hidden in sheet', after: 'Speed chip in video bar + sheet fallback' },
+    { before: 'Upload only via sheet/CTA', after: 'Top Bar upload shortcut + sheet entry' },
+    { before: 'More sheet mixed line/video actions', after: 'Sheet trimmed to video & speed only' }
   ];
 
-  const layoutDiagram = `TopBar
-├─ Brand + Upload shortcut
-└─ Offline chip
+  const layoutDiagram = `Top Bar (lines)
+├─ Draw/Edit | Undo | Redo | Delete | Upload | Status chip
 
-BottomBar (overlay)
+Bottom Bar (video)
 ├─ Row A: Timecode | Seek bar (wide)
-└─ Row B: Prev | Play/Pause (wide) | Next | Draw/Edit | Undo | More
+└─ Row B: Prev | Play/Pause (wide) | Next | Speed | More
 
-More Sheet
-├─ Actions: Redo / Delete / Deselect
-├─ Playback: Speed + Seek
-└─ Video: Choose local file + status`;
-
-  const componentPlan = [
-    'TopBar.tsx: brand, upload shortcut, offline pill',
-    'BottomControls.tsx: Row A seek + Row B actions overlayed on video',
-    'SeekBar.tsx: thick range with extended hit box & time readouts',
-    'MoreSheet.tsx: Redo/Delete/Speed/Video actions, layout notes',
-    'CanvasLayer.tsx: drawing & selection handles with larger hit areas',
-    'App.tsx: state & coordination across layers'
-  ];
-
-  const safeAreaSnippet = `:root {
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-.ui-bottom {
-  padding-bottom: calc(0.85rem + var(--safe-bottom));
-}
-.screen { height: var(--viewport-height, 100dvh); }`;
+More Sheet (video only)
+├─ Video & Speed selection
+└─ Playback helpers + status`;
 
   const seekbarNotes = [
     'Visible track height ~10px with 44px+ touch padding',
@@ -666,16 +647,38 @@ More Sheet
             </div>
             <div className="top-actions">
               <button
-                className="icon-button"
+                className={`icon-button chip-button ${mode === 'select' ? 'active' : ''}`}
+                onClick={handleModeToggle}
+                disabled={!videoUrl}
+                aria-label="Toggle draw or edit"
+                title="Toggle draw or edit"
+              >
+                {mode === 'draw' ? '✏️ Draw' : '🎯 Edit'}
+              </button>
+              <button className="icon-button chip-button" onClick={handleUndo} disabled={!history.length} aria-label="Undo">
+                ↩️ Undo
+              </button>
+              <button className="icon-button chip-button" onClick={handleRedo} disabled={!redoStack.length} aria-label="Redo">
+                ↪️ Redo
+              </button>
+              <button
+                className="icon-button chip-button"
+                onClick={deleteSelected}
+                disabled={!selectedId}
+                aria-label="Delete selected"
+              >
+                🗑️ Delete
+              </button>
+              <button
+                className="icon-button chip-button"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Upload video"
-                disabled={false}
               >
-                📂
+                📂 Upload
               </button>
-              <div className="pill tight">
+              <div className="pill tight status-pill" aria-label="PWA status">
                 <span className="tag">PWA</span>
-                Offline
+                Offline ready
               </div>
             </div>
           </div>
@@ -717,13 +720,10 @@ More Sheet
               <button className="icon-button" onClick={() => step(1)} disabled={!videoUrl} aria-label="Next frame">
                 ▶
               </button>
-              <button className={`icon-button ${mode === 'select' ? 'active' : ''}`} onClick={handleModeToggle} disabled={!videoUrl} aria-label="Toggle draw or edit">
-                {mode === 'draw' ? '✏️ Draw' : '🎯 Edit'}
+              <button className="icon-button" onClick={cycleRate} disabled={!videoUrl} aria-label="Cycle playback speed">
+                {playbackRate}x
               </button>
-              <button className="icon-button" onClick={handleUndo} disabled={!history.length} aria-label="Undo last line">
-                ↩️ Undo
-              </button>
-              <button className="icon-button" onClick={() => toggleSheet()} aria-label="More actions">
+              <button className="icon-button" onClick={() => toggleSheet()} aria-label="More video options">
                 ⋯
               </button>
             </div>
@@ -733,122 +733,109 @@ More Sheet
         <div className={`bottom-sheet ${sheetSnap}`}>
           <div className={`sheet-backdrop ${sheetSnap === 'collapsed' ? 'hidden' : ''}`} onClick={() => toggleSheet('collapsed')} />
           <div className="sheet-surface" role="dialog" aria-label="Playback controls">
-            <div className="sheet-handle" onClick={() => toggleSheet(sheetSnap === 'half' ? 'full' : sheetSnap === 'full' ? 'half' : 'half')}>
-              <span className="grip" />
+            <div className="sheet-header">
+              <div
+                className="sheet-handle"
+                onClick={() => toggleSheet(sheetSnap === 'half' ? 'full' : sheetSnap === 'full' ? 'half' : 'half')}
+              >
+                <span className="grip" />
+              </div>
+              <div className="sheet-title">
+                <strong>Video controls</strong>
+                <small>Local only · scroll to reveal all actions</small>
+              </div>
+              <button
+                className="icon-button ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSheet('collapsed');
+                }}
+                aria-label="Close sheet"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="sheet-grid">
-              <section>
-                <header>
-                  <h3>Video & Speed</h3>
-                  <small>Local only · 0.25x / 0.5x / 1.0x</small>
-                </header>
-                <button className="wide" onClick={() => fileInputRef.current?.click()}>
-                  📂 Upload / Choose
-                </button>
-                {videoFile && <p className="meta">{videoFile.name}</p>}
-                <div className="pill speed-group">
-                  {[0.25, 0.5, 1].map((rate) => (
-                    <button
-                      key={rate}
-                      onClick={() => handleRateChange(rate)}
-                      disabled={!videoUrl}
-                      className={playbackRate === rate ? 'active' : ''}
-                    >
-                      {rate}x
+            <div className="sheet-body">
+              <div className="sheet-grid">
+                <section>
+                  <header>
+                    <h3>Video & Speed</h3>
+                    <small>Local only · 0.25x / 0.5x / 1.0x</small>
+                  </header>
+                  <button className="wide" onClick={() => fileInputRef.current?.click()}>
+                    📂 Upload / Choose
+                  </button>
+                  {videoFile && <p className="meta">{videoFile.name}</p>}
+                  <div className="pill speed-group">
+                    {[0.25, 0.5, 1].map((rate) => (
+                      <button
+                        key={rate}
+                        onClick={() => handleRateChange(rate)}
+                        disabled={!videoUrl}
+                        className={playbackRate === rate ? 'active' : ''}
+                      >
+                        {rate}x
+                      </button>
+                    ))}
+                    <button className="ghost" onClick={cycleRate} disabled={!videoUrl}>
+                      Cycle
                     </button>
-                  ))}
-                  <button className="ghost" onClick={cycleRate} disabled={!videoUrl}>
-                    Cycle
-                  </button>
-                </div>
-              </section>
+                  </div>
+                </section>
 
-              <section>
-                <header>
-                  <h3>More actions</h3>
-                  <small>Low-frequency controls</small>
-                </header>
-                <div className="edit-row">
-                  <button onClick={handleRedo} disabled={!redoStack.length}>
-                    ↪️ Redo
-                  </button>
-                  <button onClick={deleteSelected} disabled={!selectedId}>
-                    🗑️ Delete selected
-                  </button>
-                  <button onClick={clearSelection} disabled={!selectedId}>
-                    ✖️ Deselect
-                  </button>
-                  <button onClick={() => toggleSheet('collapsed')} className="ghost">
-                    Close sheet
-                  </button>
-                </div>
-                <div className="status-grid">
-                  <div className="chip">Mode: {mode === 'draw' ? 'Draw line' : 'Select/Edit'}</div>
-                  <div className="chip">Playback: {formattedTime(currentTime)} / {formattedTime(duration || 0)}</div>
-                  <div className="chip">Rate: {playbackRate}x</div>
-                  {videoFile && <div className="chip file-chip">File: {videoFile.name}</div>}
-                </div>
-              </section>
+                <section>
+                  <header>
+                    <h3>Playback helpers</h3>
+                    <small>Seek & speed tips</small>
+                  </header>
+                  <input
+                    className="seek"
+                    type="range"
+                    min={0}
+                    max={hasDuration ? duration : 0}
+                    step={0.001}
+                    value={hasDuration ? currentTime : 0}
+                    onChange={(e) => handleSeek(Number(e.target.value))}
+                    disabled={!hasDuration}
+                  />
+                  <ul className="bullet-list">
+                    {seekbarNotes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                  <div className="pill tight inline-metrics">
+                    <span>{formattedTime(currentTime)}</span>
+                    <span>/</span>
+                    <span>{formattedTime(duration || 0)}</span>
+                    <span>• {playbackRate}x</span>
+                  </div>
+                </section>
 
-              <section>
-                <header>
-                  <h3>Seekbar spec</h3>
-                  <small>Visibility + touch</small>
-                </header>
-                <input
-                  className="seek"
-                  type="range"
-                  min={0}
-                  max={hasDuration ? duration : 0}
-                  step={0.001}
-                  value={hasDuration ? currentTime : 0}
-                  onChange={(e) => handleSeek(Number(e.target.value))}
-                  disabled={!hasDuration}
-                />
-                <ul className="bullet-list">
-                  {seekbarNotes.map((note) => (
-                    <li key={note}>{note}</li>
-                  ))}
-                </ul>
-              </section>
+                <section>
+                  <header>
+                    <h3>Layout diagram</h3>
+                    <small>Top vs bottom controls</small>
+                  </header>
+                  <pre className="code-block">{layoutDiagram}</pre>
+                </section>
 
-              <section>
-                <header>
-                  <h3>Layout diagram</h3>
-                  <small>Top bar / Bottom rows / More sheet</small>
-                </header>
-                <pre className="code-block">{layoutDiagram}</pre>
-              </section>
-
-              <section>
-                <header>
-                  <h3>Component plan</h3>
-                  <small>Suggested split</small>
-                </header>
-                <ul className="bullet-list">
-                  {componentPlan.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-                <pre className="code-block">{safeAreaSnippet}</pre>
-              </section>
-
-              <section className="mapping">
-                <header>
-                  <h3>Before → After</h3>
-                  <small>Where controls moved</small>
-                </header>
-                <div className="mapping-grid">
-                  {mapping.map((row) => (
-                    <div key={row.before} className="mapping-row">
-                      <span>{row.before}</span>
-                      <span>→</span>
-                      <strong>{row.after}</strong>
-                    </div>
-                  ))}
-                </div>
-              </section>
+                <section>
+                  <header>
+                    <h3>Before → After</h3>
+                    <small>Where controls moved</small>
+                  </header>
+                  <div className="mapping-grid">
+                    {mapping.map((row) => (
+                      <div key={row.before} className="mapping-row">
+                        <span>{row.before}</span>
+                        <span>→</span>
+                        <strong>{row.after}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
             </div>
           </div>
         </div>
