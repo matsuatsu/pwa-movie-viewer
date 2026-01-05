@@ -333,6 +333,24 @@ function App() {
     if (!videoUrl || event.button === 2) return;
     const point = toNormalizedPoint(event);
     showControls(true);
+
+    if (point) {
+      const { line, target } = findHit(point);
+      if (line) {
+        if (mode === 'draw') setMode('select');
+        setSelectedId(line.id);
+        editSessionRef.current = target
+          ? {
+              id: line.id,
+              before: { ...line },
+              lastPointer: point,
+              type: target
+            }
+          : null;
+        return;
+      }
+    }
+
     if (mode === 'draw') {
       if (!point) return;
       const newDraft: LineShape = {
@@ -550,17 +568,15 @@ function App() {
   };
 
   useEffect(() => {
-    if (!isPlaying || draftLine || sheetSnap !== 'collapsed' || mode === 'select' || selectedId) {
-      setControlsVisible(true);
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
-      return;
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
     }
-    hideTimerRef.current = window.setTimeout(() => setControlsVisible(false), 2600);
+    setControlsVisible(true);
     return () => {
       if (hideTimerRef.current) {
         clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
       }
     };
   }, [isPlaying, draftLine, sheetSnap, mode, selectedId]);
@@ -722,9 +738,6 @@ More Sheet (video only)
               </button>
               <button className="icon-button" onClick={cycleRate} disabled={!videoUrl} aria-label="Cycle playback speed">
                 {playbackRate}x
-              </button>
-              <button className="icon-button" onClick={() => toggleSheet()} aria-label="More video options">
-                ⋯
               </button>
             </div>
           </div>
