@@ -10,4 +10,5 @@ export type LineShape = {
 
 export type DrawingAction =
   | { type: 'add'; line: LineShape }
-  | { type: 'delete'; line: LineShape };
+  | { type: 'delete'; line: LineShape }
+  | { type: 'update'; before: LineShape; after: LineShape };
