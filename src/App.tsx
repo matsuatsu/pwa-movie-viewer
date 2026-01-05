@@ -61,6 +61,22 @@ function App() {
 
   useCanvasSize(containerRef, canvasRef);
 
+  useEffect(() => {
+    const updateViewportHeight = () => {
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty('--viewport-height', `${viewportHeight}px`);
+    };
+
+    updateViewportHeight();
+    window.addEventListener('resize', updateViewportHeight);
+    window.visualViewport?.addEventListener('resize', updateViewportHeight);
+
+    return () => {
+      window.removeEventListener('resize', updateViewportHeight);
+      window.visualViewport?.removeEventListener('resize', updateViewportHeight);
+    };
+  }, []);
+
   const videoKey = useMemo(
     () => (videoFile ? `${videoFile.name}:${videoFile.size}:${videoFile.lastModified}` : null),
     [videoFile]
@@ -296,108 +312,115 @@ function App() {
   };
 
   return (
-    <div className="panel app-shell">
-      <header className="hero-header">
-        <div>
-          <h1 className="title">Golf Swing Analyzer</h1>
-          <p className="subtitle">
-            PWA for Android Chrome. Local playback with frame stepping and overlay drawing.
-          </p>
-        </div>
-        <div className="pill">
-          <span className="tag">PWA</span>
-          Offline-ready shell
-        </div>
-      </header>
-
-      <div className="video-shell" ref={containerRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp}>
+    <div className="app-shell">
+      <div
+        className="video-shell"
+        ref={containerRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
         {videoUrl ? (
-          <video ref={videoRef} src={videoUrl} controls style={{ width: '100%', height: '100%' }} />
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            controls={false}
+            playsInline
+            disablePictureInPicture
+            controlsList="nodownload noremoteplayback nofullscreen"
+            aria-label="Swing video"
+          />
         ) : (
-          <div style={{ color: '#94a3b8', display: 'grid', placeItems: 'center', height: '100%', textAlign: 'center' }}>
+          <div className="empty-state">
             <p>Select a local swing video to begin.</p>
+            <p className="hint">Tap the Upload button to load a file for analysis.</p>
           </div>
         )}
         <canvas className="overlay" ref={canvasRef} />
-      </div>
 
-      <div className="toolbar">
-        <label className="file-label">
-          📂 Choose video
-          <input type="file" accept="video/*" onChange={onFileChange} />
-        </label>
-        <button className="primary" onClick={handlePlayPause} disabled={!videoUrl}>
-          {isPlaying ? 'Pause' : 'Play'}
-        </button>
-        <div className="pill speed-pill">
-          <span>Speed:</span>
-          {[0.25, 0.5, 1].map((rate) => (
-            <button
-              key={rate}
-              onClick={() => handleRateChange(rate)}
-              disabled={!videoUrl}
-              className={playbackRate === rate ? 'active' : ''}
-            >
-              {rate}x
+        <div className="overlay-layer overlay-top">
+          <div className="glass-row">
+            <div>
+              <h1 className="title">Golf Swing Analyzer</h1>
+              <p className="subtitle">
+                Full-screen playback with frame stepping, drawing, and saved annotations.
+              </p>
+            </div>
+            <div className="pill">
+              <span className="tag">PWA</span>
+              Offline-ready shell
+            </div>
+          </div>
+          <div className="glass-row status-bar">
+            <label className="file-label">
+              📂 Upload video
+              <input type="file" accept="video/*" onChange={onFileChange} />
+            </label>
+            <span className="chip">Mode: {mode === 'draw' ? 'Draw line' : 'Select/Delete'}</span>
+            <span className="chip">Playback: {formattedTime(currentTime)} / {formattedTime(duration || 0)}</span>
+            {videoFile && <span className="chip file-chip">{videoFile.name}</span>}
+          </div>
+        </div>
+
+        <div className="overlay-layer overlay-bottom">
+          <div className="glass-row toolbar">
+            <button className="primary" onClick={handlePlayPause} disabled={!videoUrl}>
+              {isPlaying ? 'Pause' : 'Play'}
             </button>
-          ))}
-        </div>
-        <div className="stepper">
-          <button onClick={() => step(-1)} disabled={!videoUrl}>
-            ⬅︎ Prev frame
-          </button>
-          <button onClick={() => step(1)} disabled={!videoUrl}>
-            Next frame ➡︎
-          </button>
-        </div>
-      </div>
+            <div className="pill speed-pill">
+              <span>Speed:</span>
+              {[0.25, 0.5, 1].map((rate) => (
+                <button
+                  key={rate}
+                  onClick={() => handleRateChange(rate)}
+                  disabled={!videoUrl}
+                  className={playbackRate === rate ? 'active' : ''}
+                >
+                  {rate}x
+                </button>
+              ))}
+            </div>
+            <div className="stepper">
+              <button onClick={() => step(-1)} disabled={!videoUrl}>
+                ⬅︎ Prev frame
+              </button>
+              <button onClick={() => step(1)} disabled={!videoUrl}>
+                Next frame ➡︎
+              </button>
+            </div>
+          </div>
 
-      <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div className="status-bar">
-          <span className="chip">Mode: {mode === 'draw' ? 'Draw line' : 'Select/Delete'}</span>
-          <span className="chip">Playback: {formattedTime(currentTime)} / {formattedTime(duration || 0)}</span>
-          {videoFile && <span className="chip file-chip">{videoFile.name}</span>}
+          <div className="glass-row seek-row">
+            <input
+              className="seek"
+              type="range"
+              min={0}
+              max={duration || 0}
+              step={0.001}
+              value={duration ? currentTime : 0}
+              onChange={(e) => handleSeek(Number(e.target.value))}
+              disabled={!videoUrl}
+            />
+          </div>
+
+          <div className="glass-row controls">
+            <button onClick={() => setMode('draw')} disabled={!videoUrl} className={mode === 'draw' ? 'active' : ''}>
+              ✏️ Draw line
+            </button>
+            <button onClick={() => setMode('select')} disabled={!videoUrl} className={mode === 'select' ? 'active' : ''}>
+              🎯 Select/Delete
+            </button>
+            <button onClick={deleteSelected} disabled={!selectedId}>
+              🗑️ Delete selected
+            </button>
+            <button onClick={handleUndo} disabled={!history.length}>
+              ↩️ Undo
+            </button>
+            <button onClick={handleRedo} disabled={!redoStack.length}>
+              ↪️ Redo
+            </button>
+          </div>
         </div>
-
-        <input
-          className="seek"
-          type="range"
-          min={0}
-          max={duration || 0}
-          step={0.001}
-          value={duration ? currentTime : 0}
-          onChange={(e) => handleSeek(Number(e.target.value))}
-          disabled={!videoUrl}
-        />
-
-        <div className="controls">
-          <button onClick={() => setMode('draw')} disabled={!videoUrl} className={mode === 'draw' ? 'active' : ''}>
-            ✏️ Draw line
-          </button>
-          <button onClick={() => setMode('select')} disabled={!videoUrl} className={mode === 'select' ? 'active' : ''}>
-            🎯 Select/Delete
-          </button>
-          <button onClick={deleteSelected} disabled={!selectedId}>
-            🗑️ Delete selected
-          </button>
-          <button onClick={handleUndo} disabled={!history.length}>
-            ↩️ Undo
-          </button>
-          <button onClick={handleRedo} disabled={!redoStack.length}>
-            ↪️ Redo
-          </button>
-        </div>
-      </div>
-
-      <div className="panel" style={{ fontSize: '0.95rem', color: '#cbd5e1' }}>
-        <p style={{ marginTop: 0 }}>
-          • Frame stepping uses the smallest supported seek window (requestVideoFrameCallback when available) to reach the next
-          decoded frame.
-        </p>
-        <p>
-          • Draw lines directly on the overlay; they scale with the video area and are stored locally per video using a
-          filename/size/timestamp identifier.
-        </p>
       </div>
     </div>
   );
