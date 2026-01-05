@@ -2,7 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const basePath = process.env.NODE_ENV === 'production' ? '/pwa-movie-viewer/' : '/';
+
 export default defineConfig({
+  base: basePath,
   plugins: [
     react(),
     VitePWA({
@@ -12,13 +15,14 @@ export default defineConfig({
         name: 'Golf Swing Analyzer',
         short_name: 'Swing Analyzer',
         description: 'PWA for frame stepping and drawing overlays on golf swing videos.',
-        start_url: '/',
+        start_url: basePath,
+        scope: basePath,
         display: 'standalone',
         background_color: '#0f172a',
         theme_color: '#0f172a',
         icons: [
-          { src: '/icons/icon-192.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
-          { src: '/icons/icon-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+          { src: `${basePath}icons/icon-192.svg`, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: `${basePath}icons/icon-512.svg`, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
         ]
       }
     })
