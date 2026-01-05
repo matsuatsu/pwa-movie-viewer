@@ -6,8 +6,8 @@ import { loadDrawing, saveDrawing } from './storage';
 
 const STEP_EPS = 1 / 120;
 const HISTORY_LIMIT = 50;
-const HANDLE_VISUAL_RADIUS = 10;
-const HANDLE_HIT_RADIUS = 28;
+const HANDLE_VISUAL_RADIUS = 14;
+const HANDLE_HIT_RADIUS = 32;
 const LINE_HIT_THRESHOLD = 18;
 
 function distanceToSegment(p: Point, a: Point, b: Point, width: number, height: number): number {
@@ -543,8 +543,14 @@ function App() {
     showControls(true);
   };
 
+  const clearSelection = () => {
+    setSelectedId(null);
+    editSessionRef.current = null;
+    showControls(true);
+  };
+
   useEffect(() => {
-    if (!isPlaying || draftLine || sheetSnap !== 'collapsed') {
+    if (!isPlaying || draftLine || sheetSnap !== 'collapsed' || mode === 'select' || selectedId) {
       setControlsVisible(true);
       if (hideTimerRef.current) {
         clearTimeout(hideTimerRef.current);
@@ -557,7 +563,7 @@ function App() {
         clearTimeout(hideTimerRef.current);
       }
     };
-  }, [isPlaying, draftLine, sheetSnap]);
+  }, [isPlaying, draftLine, sheetSnap, mode, selectedId]);
 
   const formattedTime = (time: number) => {
     const minutes = Math.floor(time / 60)
@@ -573,14 +579,49 @@ function App() {
   };
 
   const mapping = [
-    { before: 'Upload video (status bar)', after: 'Top icon + Bottom Sheet “Video” section' },
-    { before: 'Play/Pause (toolbar)', after: 'Mini bar primary control' },
-    { before: 'Prev/Next frame (toolbar)', after: 'Mini bar frame-step buttons' },
-    { before: 'Speed pill (toolbar)', after: 'Mini bar quick toggle + Sheet detailed speeds' },
-    { before: 'Mode buttons (controls row)', after: 'Mini bar single toggle (Draw/Select)' },
-    { before: 'Delete selected (controls)', after: 'Bottom Sheet Edit section' },
-    { before: 'Undo/Redo (controls)', after: 'Mini bar Undo + Bottom Sheet Redo' },
-    { before: 'Seek bar (seek row)', after: 'Bottom Sheet timeline' }
+    { before: 'Seek bar (edge of screen)', after: 'Bottom bar Row A with padded hit area' },
+    { before: 'Play/Pause (toolbar)', after: 'Bottom bar Row B large primary button' },
+    { before: 'Prev/Next frame (toolbar)', after: 'Bottom bar Row B frame-step buttons' },
+    { before: 'Mode buttons (floating/edge)', after: 'Bottom bar Row B single Draw/Edit toggle' },
+    { before: 'Delete / Redo floating near bottom', after: 'More sheet actions list' },
+    { before: 'Upload (top bar only)', after: 'Top icon + More sheet "Video" section' }
+  ];
+
+  const layoutDiagram = `TopBar
+├─ Brand + Upload shortcut
+└─ Offline chip
+
+BottomBar (overlay)
+├─ Row A: Timecode | Seek bar (wide)
+└─ Row B: Prev | Play/Pause (wide) | Next | Draw/Edit | Undo | More
+
+More Sheet
+├─ Actions: Redo / Delete / Deselect
+├─ Playback: Speed + Seek
+└─ Video: Choose local file + status`;
+
+  const componentPlan = [
+    'TopBar.tsx: brand, upload shortcut, offline pill',
+    'BottomControls.tsx: Row A seek + Row B actions overlayed on video',
+    'SeekBar.tsx: thick range with extended hit box & time readouts',
+    'MoreSheet.tsx: Redo/Delete/Speed/Video actions, layout notes',
+    'CanvasLayer.tsx: drawing & selection handles with larger hit areas',
+    'App.tsx: state & coordination across layers'
+  ];
+
+  const safeAreaSnippet = `:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+.ui-bottom {
+  padding-bottom: calc(0.85rem + var(--safe-bottom));
+}
+.screen { height: var(--viewport-height, 100dvh); }`;
+
+  const seekbarNotes = [
+    'Visible track height ~10px with 44px+ touch padding',
+    'Current/Total time kept beside bar for glanceable reading',
+    'Dragging keeps UI updated; release performs accurate seek',
+    'Bar stays centered above safe-area padding so it never hides'
   ];
 
   const hasDuration = Boolean(duration && !Number.isNaN(duration));
@@ -641,40 +682,51 @@ function App() {
         </div>
 
         <div className={`ui-layer ui-bottom ${controlsVisible ? 'visible' : 'faded'}`}>
-          <div className="mini-bar glass-row compact">
-            <button className="icon-button" onClick={() => step(-1)} disabled={!videoUrl} aria-label="Previous frame">
-              ◀
-            </button>
-            <button className="primary icon-button wide" onClick={handlePlayPause} disabled={!videoUrl} aria-label="Play or pause">
-              {isPlaying ? 'Pause' : 'Play'}
-            </button>
-            <button className="icon-button" onClick={() => step(1)} disabled={!videoUrl} aria-label="Next frame">
-              ▶
-            </button>
-            <div className="mini-timeline">
-              <input
-                className="mini-seek"
-                type="range"
-                min={0}
-                max={hasDuration ? duration : 0}
-                step={0.001}
-                value={hasDuration ? currentTime : 0}
-                onChange={(e) => handleSeek(Number(e.target.value))}
-                disabled={!hasDuration}
-              />
-              <button className="timecode" onClick={() => toggleSheet('half')} disabled={!hasDuration}>
+          <div className="bottom-controls">
+            <div className="seek-row glass-row">
+              <div className="timecode dual" role="text" aria-label="Current and total time" onClick={() => toggleSheet('half')}>
                 {formattedTime(currentTime)} / {formattedTime(duration || 0)}
+              </div>
+              <div className="seek-touch">
+                <input
+                  className="seek-bar"
+                  type="range"
+                  min={0}
+                  max={hasDuration ? duration : 0}
+                  step={0.001}
+                  value={hasDuration ? currentTime : 0}
+                  onChange={(e) => handleSeek(Number(e.target.value))}
+                  disabled={!hasDuration}
+                  aria-label="Seek timeline"
+                />
+              </div>
+            </div>
+
+            <div className="button-row glass-row compact">
+              <button className="icon-button" onClick={() => step(-1)} disabled={!videoUrl} aria-label="Previous frame">
+                ◀
+              </button>
+              <button
+                className="primary icon-button play-button"
+                onClick={handlePlayPause}
+                disabled={!videoUrl}
+                aria-label="Play or pause"
+              >
+                {isPlaying ? 'Pause' : 'Play'}
+              </button>
+              <button className="icon-button" onClick={() => step(1)} disabled={!videoUrl} aria-label="Next frame">
+                ▶
+              </button>
+              <button className={`icon-button ${mode === 'select' ? 'active' : ''}`} onClick={handleModeToggle} disabled={!videoUrl} aria-label="Toggle draw or edit">
+                {mode === 'draw' ? '✏️ Draw' : '🎯 Edit'}
+              </button>
+              <button className="icon-button" onClick={handleUndo} disabled={!history.length} aria-label="Undo last line">
+                ↩️ Undo
+              </button>
+              <button className="icon-button" onClick={() => toggleSheet()} aria-label="More actions">
+                ⋯
               </button>
             </div>
-            <button className="icon-button" onClick={handleUndo} disabled={!history.length} aria-label="Undo last line">
-              ↩️
-            </button>
-            <button className="icon-button" onClick={handleModeToggle} disabled={!videoUrl} aria-label="Toggle draw or select mode">
-              {mode === 'draw' ? '✏️' : '🎯'}
-            </button>
-            <button className="icon-button" onClick={() => toggleSheet()} aria-label="Show more controls">
-              {sheetSnap === 'collapsed' ? '⌃' : '⌄'}
-            </button>
           </div>
         </div>
 
@@ -688,20 +740,13 @@ function App() {
             <div className="sheet-grid">
               <section>
                 <header>
-                  <h3>Video</h3>
-                  <small>Local only</small>
+                  <h3>Video & Speed</h3>
+                  <small>Local only · 0.25x / 0.5x / 1.0x</small>
                 </header>
                 <button className="wide" onClick={() => fileInputRef.current?.click()}>
                   📂 Upload / Choose
                 </button>
                 {videoFile && <p className="meta">{videoFile.name}</p>}
-              </section>
-
-              <section>
-                <header>
-                  <h3>Speed</h3>
-                  <small>0.25x / 0.5x / 1.0x</small>
-                </header>
                 <div className="pill speed-group">
                   {[0.25, 0.5, 1].map((rate) => (
                     <button
@@ -721,8 +766,35 @@ function App() {
 
               <section>
                 <header>
-                  <h3>Timeline</h3>
-                  <small>Seek without default UI</small>
+                  <h3>More actions</h3>
+                  <small>Low-frequency controls</small>
+                </header>
+                <div className="edit-row">
+                  <button onClick={handleRedo} disabled={!redoStack.length}>
+                    ↪️ Redo
+                  </button>
+                  <button onClick={deleteSelected} disabled={!selectedId}>
+                    🗑️ Delete selected
+                  </button>
+                  <button onClick={clearSelection} disabled={!selectedId}>
+                    ✖️ Deselect
+                  </button>
+                  <button onClick={() => toggleSheet('collapsed')} className="ghost">
+                    Close sheet
+                  </button>
+                </div>
+                <div className="status-grid">
+                  <div className="chip">Mode: {mode === 'draw' ? 'Draw line' : 'Select/Edit'}</div>
+                  <div className="chip">Playback: {formattedTime(currentTime)} / {formattedTime(duration || 0)}</div>
+                  <div className="chip">Rate: {playbackRate}x</div>
+                  {videoFile && <div className="chip file-chip">File: {videoFile.name}</div>}
+                </div>
+              </section>
+
+              <section>
+                <header>
+                  <h3>Seekbar spec</h3>
+                  <small>Visibility + touch</small>
                 </header>
                 <input
                   className="seek"
@@ -734,43 +806,32 @@ function App() {
                   onChange={(e) => handleSeek(Number(e.target.value))}
                   disabled={!hasDuration}
                 />
-                <div className="meta">
-                  {formattedTime(currentTime)} / {formattedTime(duration || 0)}
-                </div>
+                <ul className="bullet-list">
+                  {seekbarNotes.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
               </section>
 
               <section>
                 <header>
-                  <h3>Edit</h3>
-                  <small>Select / delete / move</small>
+                  <h3>Layout diagram</h3>
+                  <small>Top bar / Bottom rows / More sheet</small>
                 </header>
-                <div className="edit-row">
-                  <button onClick={() => setMode('draw')} disabled={!videoUrl} className={mode === 'draw' ? 'active' : ''}>
-                    ✏️ Draw
-                  </button>
-                  <button onClick={() => setMode('select')} disabled={!videoUrl} className={mode === 'select' ? 'active' : ''}>
-                    🎯 Select
-                  </button>
-                  <button onClick={deleteSelected} disabled={!selectedId}>
-                    🗑️ Delete
-                  </button>
-                  <button onClick={handleRedo} disabled={!redoStack.length}>
-                    ↪️ Redo
-                  </button>
-                </div>
+                <pre className="code-block">{layoutDiagram}</pre>
               </section>
 
               <section>
                 <header>
-                  <h3>Status</h3>
-                  <small>Playback + mode</small>
+                  <h3>Component plan</h3>
+                  <small>Suggested split</small>
                 </header>
-                <div className="status-grid">
-                  <div className="chip">Mode: {mode === 'draw' ? 'Draw line' : 'Select/Edit'}</div>
-                  <div className="chip">Playback: {formattedTime(currentTime)} / {formattedTime(duration || 0)}</div>
-                  {videoFile && <div className="chip file-chip">File: {videoFile.name}</div>}
-                  <div className="chip">Rate: {playbackRate}x</div>
-                </div>
+                <ul className="bullet-list">
+                  {componentPlan.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <pre className="code-block">{safeAreaSnippet}</pre>
               </section>
 
               <section className="mapping">
