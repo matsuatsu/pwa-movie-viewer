@@ -6,8 +6,9 @@ import { loadDrawing, saveDrawing } from './storage';
 
 const STEP_EPS = 1 / 120;
 const HISTORY_LIMIT = 50;
-
-type Mode = 'draw' | 'select';
+const HANDLE_VISUAL_RADIUS = 10;
+const HANDLE_HIT_RADIUS = 28;
+const LINE_HIT_THRESHOLD = 18;
 
 function distanceToSegment(p: Point, a: Point, b: Point, width: number, height: number): number {
   const px = p.x * width;
@@ -27,19 +28,63 @@ function distanceToSegment(p: Point, a: Point, b: Point, width: number, height: 
   return Math.sqrt(distX * distX + distY * distY);
 }
 
-function useCanvasSize(container: React.RefObject<HTMLDivElement>, canvas: React.RefObject<HTMLCanvasElement>) {
+function clampPoint(p: Point): Point {
+  return { x: Math.max(0, Math.min(1, p.x)), y: Math.max(0, Math.min(1, p.y)) };
+}
+
+type Mode = 'draw' | 'select';
+type DragType = 'p1' | 'p2' | 'move';
+type Rect = { x: number; y: number; width: number; height: number };
+
+type EditSession = {
+  id: string;
+  before: LineShape;
+  lastPointer: Point;
+  type: DragType;
+};
+
+function useCanvasSize(
+  container: React.RefObject<HTMLDivElement>,
+  canvas: React.RefObject<HTMLCanvasElement>,
+  video: React.RefObject<HTMLVideoElement>,
+  onBounds: (rect: Rect | null) => void
+) {
   useEffect(() => {
-    function resize() {
+    const resize = () => {
       const rect = container.current?.getBoundingClientRect();
-      if (rect && canvas.current) {
-        canvas.current.width = rect.width;
-        canvas.current.height = rect.height;
+      const vid = video.current;
+      if (!rect || !canvas.current) return;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.current.width = rect.width * dpr;
+      canvas.current.height = rect.height * dpr;
+      canvas.current.style.width = `${rect.width}px`;
+      canvas.current.style.height = `${rect.height}px`;
+      const ctx = canvas.current.getContext('2d');
+      ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      if (!vid || !vid.videoWidth || !vid.videoHeight) {
+        onBounds(null);
+        return;
       }
-    }
+      const containerAspect = rect.width / rect.height;
+      const videoAspect = vid.videoWidth / vid.videoHeight;
+      let width = rect.width;
+      let height = rect.height;
+      if (containerAspect > videoAspect) {
+        height = rect.height;
+        width = height * videoAspect;
+      } else {
+        width = rect.width;
+        height = width / videoAspect;
+      }
+      const x = (rect.width - width) / 2;
+      const y = (rect.height - height) / 2;
+      onBounds({ x, y, width, height });
+    };
     resize();
     window.addEventListener('resize', resize);
     return () => window.removeEventListener('resize', resize);
-  }, [container, canvas]);
+  }, [canvas, container, video, onBounds]);
 }
 
 function App() {
@@ -48,6 +93,8 @@ function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
+  const editSessionRef = useRef<EditSession | null>(null);
+
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [duration, setDuration] = useState(0);
@@ -62,8 +109,9 @@ function App() {
   const [redoStack, setRedoStack] = useState<DrawingAction[]>([]);
   const [sheetSnap, setSheetSnap] = useState<'collapsed' | 'half' | 'full'>('collapsed');
   const [controlsVisible, setControlsVisible] = useState(true);
+  const [videoBounds, setVideoBounds] = useState<Rect | null>(null);
 
-  useCanvasSize(containerRef, canvasRef);
+  useCanvasSize(containerRef, canvasRef, videoRef, setVideoBounds);
 
   useEffect(() => {
     const updateViewportHeight = () => {
@@ -95,6 +143,24 @@ function App() {
       video.playbackRate = playbackRate;
       video.pause();
       setIsPlaying(false);
+      setVideoBounds((prev) => {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!rect || !video.videoWidth || !video.videoHeight) return prev;
+        const containerAspect = rect.width / rect.height;
+        const videoAspect = video.videoWidth / video.videoHeight;
+        let width = rect.width;
+        let height = rect.height;
+        if (containerAspect > videoAspect) {
+          height = rect.height;
+          width = height * videoAspect;
+        } else {
+          width = rect.width;
+          height = width / videoAspect;
+        }
+        const x = (rect.width - width) / 2;
+        const y = (rect.height - height) / 2;
+        return { x, y, width, height };
+      });
       if (videoKey) {
         loadDrawing(videoKey).then((saved) => {
           if (saved) {
@@ -126,27 +192,60 @@ function App() {
   }, [playbackRate, videoKey]);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
-    const ctx = canvasRef.current.getContext('2d');
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const { width, height } = canvasRef.current;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
     ctx.clearRect(0, 0, width, height);
-    const drawLine = (line: LineShape, color: string) => {
+
+    const drawLine = (line: LineShape, color: string, thickness = 2) => {
+      if (!videoBounds) return;
+      const x1 = videoBounds.x + line.p1.x * videoBounds.width;
+      const y1 = videoBounds.y + line.p1.y * videoBounds.height;
+      const x2 = videoBounds.x + line.p2.x * videoBounds.width;
+      const y2 = videoBounds.y + line.p2.y * videoBounds.height;
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = thickness;
       ctx.beginPath();
-      ctx.moveTo(line.p1.x * width, line.p1.y * height);
-      ctx.lineTo(line.p2.x * width, line.p2.y * height);
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
       ctx.stroke();
     };
+
+    const drawHandles = (line: LineShape) => {
+      if (!videoBounds) return;
+      const handlePositions = [line.p1, line.p2];
+      ctx.fillStyle = '#0b1220';
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2;
+      handlePositions.forEach((p) => {
+        const cx = videoBounds.x + p.x * videoBounds.width;
+        const cy = videoBounds.y + p.y * videoBounds.height;
+        ctx.beginPath();
+        ctx.arc(cx, cy, HANDLE_VISUAL_RADIUS + 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = '#22d3ee';
+        ctx.fill();
+        ctx.stroke();
+      });
+    };
+
     lines.forEach((line) => {
-      const color = line.id === selectedId ? '#22d3ee' : '#22c55e';
-      drawLine(line, color);
+      const selected = line.id === selectedId;
+      drawLine(line, selected ? '#22d3ee' : '#22c55e', selected ? 3 : 2);
+      if (selected) {
+        drawHandles(line);
+      }
     });
     if (draftLine) {
-      drawLine(draftLine, '#a855f7');
+      drawLine(draftLine, '#a855f7', 2);
     }
-  }, [lines, draftLine, selectedId]);
+  }, [lines, draftLine, selectedId, videoBounds]);
 
   useEffect(() => {
     if (!videoKey) return;
@@ -161,10 +260,20 @@ function App() {
 
   const toNormalizedPoint = (event: React.PointerEvent) => {
     const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return null;
-    const x = (event.clientX - rect.left) / rect.width;
-    const y = (event.clientY - rect.top) / rect.height;
-    return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
+    if (!rect || !videoBounds) return null;
+    const withinX = event.clientX - rect.left;
+    const withinY = event.clientY - rect.top;
+    if (
+      withinX < videoBounds.x ||
+      withinX > videoBounds.x + videoBounds.width ||
+      withinY < videoBounds.y ||
+      withinY > videoBounds.y + videoBounds.height
+    ) {
+      return null;
+    }
+    const x = (withinX - videoBounds.x) / videoBounds.width;
+    const y = (withinY - videoBounds.y) / videoBounds.height;
+    return clampPoint({ x, y });
   };
 
   const pushHistory = (action: DrawingAction) => {
@@ -186,12 +295,46 @@ function App() {
     }, 2600);
   };
 
+  const findHit = (point: Point): { line: LineShape | null; target: DragType | null } => {
+    if (!videoBounds) return { line: null, target: null as DragType | null };
+    const hitHandle = lines.find((line) => {
+      const dx1 =
+        Math.hypot(
+          point.x * videoBounds.width - line.p1.x * videoBounds.width,
+          point.y * videoBounds.height - line.p1.y * videoBounds.height
+        ) < HANDLE_HIT_RADIUS;
+      const dx2 =
+        Math.hypot(
+          point.x * videoBounds.width - line.p2.x * videoBounds.width,
+          point.y * videoBounds.height - line.p2.y * videoBounds.height
+        ) < HANDLE_HIT_RADIUS;
+      return dx1 || dx2;
+    });
+
+    if (hitHandle) {
+      const handleType: DragType =
+        Math.hypot(
+          point.x * videoBounds.width - hitHandle.p1.x * videoBounds.width,
+          point.y * videoBounds.height - hitHandle.p1.y * videoBounds.height
+        ) < HANDLE_HIT_RADIUS
+          ? 'p1'
+          : 'p2';
+      return { line: hitHandle, target: handleType };
+    }
+
+    const hitLine = lines.find(
+      (line) => distanceToSegment(point, line.p1, line.p2, videoBounds.width, videoBounds.height) < LINE_HIT_THRESHOLD
+    );
+    if (hitLine) return { line: hitLine, target: 'move' as DragType };
+    return { line: null, target: null };
+  };
+
   const handlePointerDown = (event: React.PointerEvent) => {
-    if (!videoUrl) return;
+    if (!videoUrl || event.button === 2) return;
     const point = toNormalizedPoint(event);
-    if (!point) return;
     showControls(true);
     if (mode === 'draw') {
+      if (!point) return;
       const newDraft: LineShape = {
         id: crypto.randomUUID(),
         type: 'line',
@@ -200,19 +343,62 @@ function App() {
         createdAt: Date.now()
       };
       setDraftLine(newDraft);
+      return;
+    }
+
+    if (!point) {
+      setSelectedId(null);
+      editSessionRef.current = null;
+      return;
+    }
+
+    const { line, target } = findHit(point);
+    if (line && target) {
+      setSelectedId(line.id);
+      editSessionRef.current = {
+        id: line.id,
+        before: { ...line },
+        lastPointer: point,
+        type: target
+      };
+    } else if (line) {
+      setSelectedId(line.id);
     } else {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const hit = lines.find((line) => distanceToSegment(point, line.p1, line.p2, rect.width, rect.height) < 14);
-      setSelectedId(hit ? hit.id : null);
+      setSelectedId(null);
+      editSessionRef.current = null;
     }
   };
 
   const handlePointerMove = (event: React.PointerEvent) => {
-    if (!draftLine) return;
     const point = toNormalizedPoint(event);
-    if (!point) return;
-    setDraftLine({ ...draftLine, p2: point });
+    if (draftLine) {
+      if (!point) return;
+      setDraftLine({ ...draftLine, p2: point });
+      return;
+    }
+
+    if (!point || !editSessionRef.current) return;
+    const session = editSessionRef.current;
+    setLines((prev) =>
+      prev.map((line) => {
+        if (line.id !== session.id) return line;
+        if (session.type === 'move') {
+          const delta = { x: point.x - session.lastPointer.x, y: point.y - session.lastPointer.y };
+          session.lastPointer = point;
+          return {
+            ...line,
+            p1: clampPoint({ x: line.p1.x + delta.x, y: line.p1.y + delta.y }),
+            p2: clampPoint({ x: line.p2.x + delta.x, y: line.p2.y + delta.y })
+          };
+        }
+        if (session.type === 'p1') {
+          session.lastPointer = point;
+          return { ...line, p1: clampPoint(point) };
+        }
+        session.lastPointer = point;
+        return { ...line, p2: clampPoint(point) };
+      })
+    );
   };
 
   const handlePointerUp = () => {
@@ -221,7 +407,16 @@ function App() {
       pushHistory({ type: 'add', line: draftLine });
       setDraftLine(null);
       setSelectedId(draftLine.id);
+      return;
     }
+    if (editSessionRef.current) {
+      const session = editSessionRef.current;
+      const updated = lines.find((l) => l.id === session.id);
+      if (updated && (updated.p1.x !== session.before.p1.x || updated.p1.y !== session.before.p1.y || updated.p2.x !== session.before.p2.x || updated.p2.y !== session.before.p2.y)) {
+        pushHistory({ type: 'update', before: session.before, after: updated });
+      }
+    }
+    editSessionRef.current = null;
   };
 
   const handleUndo = () => {
@@ -233,7 +428,10 @@ function App() {
         if (last.type === 'add') {
           return current.filter((l) => l.id !== last.line.id);
         }
-        return [...current, last.line];
+        if (last.type === 'delete') {
+          return [...current, last.line];
+        }
+        return current.map((l) => (l.id === last.after.id ? last.before : l));
       });
       setRedoStack((redo) => [...redo, last].slice(-HISTORY_LIMIT));
       return prev.slice(0, -1);
@@ -249,7 +447,10 @@ function App() {
         if (last.type === 'add') {
           return [...current, last.line];
         }
-        return current.filter((l) => l.id !== last.line.id);
+        if (last.type === 'delete') {
+          return current.filter((l) => l.id !== last.line.id);
+        }
+        return current.map((l) => (l.id === last.before.id ? last.after : l));
       });
       setHistory((hist) => [...hist, last].slice(-HISTORY_LIMIT));
       return prev.slice(0, -1);
@@ -309,7 +510,7 @@ function App() {
 
   const handleSeek = (value: number) => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !duration) return;
     showControls(true);
     video.currentTime = value;
     setCurrentTime(value);
@@ -382,6 +583,8 @@ function App() {
     { before: 'Seek bar (seek row)', after: 'Bottom Sheet timeline' }
   ];
 
+  const hasDuration = Boolean(duration && !Number.isNaN(duration));
+
   return (
     <div className="app-screen">
       <div
@@ -448,6 +651,21 @@ function App() {
             <button className="icon-button" onClick={() => step(1)} disabled={!videoUrl} aria-label="Next frame">
               ▶
             </button>
+            <div className="mini-timeline">
+              <input
+                className="mini-seek"
+                type="range"
+                min={0}
+                max={hasDuration ? duration : 0}
+                step={0.001}
+                value={hasDuration ? currentTime : 0}
+                onChange={(e) => handleSeek(Number(e.target.value))}
+                disabled={!hasDuration}
+              />
+              <button className="timecode" onClick={() => toggleSheet('half')} disabled={!hasDuration}>
+                {formattedTime(currentTime)} / {formattedTime(duration || 0)}
+              </button>
+            </div>
             <button className="icon-button" onClick={handleUndo} disabled={!history.length} aria-label="Undo last line">
               ↩️
             </button>
@@ -510,11 +728,11 @@ function App() {
                   className="seek"
                   type="range"
                   min={0}
-                  max={duration || 0}
+                  max={hasDuration ? duration : 0}
                   step={0.001}
-                  value={duration ? currentTime : 0}
+                  value={hasDuration ? currentTime : 0}
                   onChange={(e) => handleSeek(Number(e.target.value))}
-                  disabled={!videoUrl}
+                  disabled={!hasDuration}
                 />
                 <div className="meta">
                   {formattedTime(currentTime)} / {formattedTime(duration || 0)}
@@ -524,7 +742,7 @@ function App() {
               <section>
                 <header>
                   <h3>Edit</h3>
-                  <small>Select / delete lines</small>
+                  <small>Select / delete / move</small>
                 </header>
                 <div className="edit-row">
                   <button onClick={() => setMode('draw')} disabled={!videoUrl} className={mode === 'draw' ? 'active' : ''}>
@@ -548,7 +766,7 @@ function App() {
                   <small>Playback + mode</small>
                 </header>
                 <div className="status-grid">
-                  <div className="chip">Mode: {mode === 'draw' ? 'Draw line' : 'Select/Delete'}</div>
+                  <div className="chip">Mode: {mode === 'draw' ? 'Draw line' : 'Select/Edit'}</div>
                   <div className="chip">Playback: {formattedTime(currentTime)} / {formattedTime(duration || 0)}</div>
                   {videoFile && <div className="chip file-chip">File: {videoFile.name}</div>}
                   <div className="chip">Rate: {playbackRate}x</div>

@@ -280,6 +280,29 @@ video {
   margin: 0 auto;
 }
 
+.mini-timeline {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.mini-seek {
+  width: 100%;
+  accent-color: #22c55e;
+}
+
+.timecode {
+  min-width: 120px;
+  text-align: center;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  padding: 0.45rem 0.6rem;
+  color: #cbd5e1;
+  font-variant-numeric: tabular-nums;
+}
+
 .bottom-sheet {
   position: absolute;
   inset: 0;
