@@ -296,11 +296,11 @@ function App() {
   };
 
   return (
-    <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'center' }}>
+    <div className="panel app-shell">
+      <header className="hero-header">
         <div>
-          <h1 style={{ margin: 0 }}>Golf Swing Analyzer</h1>
-          <p style={{ margin: '0.25rem 0', color: '#94a3b8' }}>
+          <h1 className="title">Golf Swing Analyzer</h1>
+          <p className="subtitle">
             PWA for Android Chrome. Local playback with frame stepping and overlay drawing.
           </p>
         </div>
@@ -326,39 +326,55 @@ function App() {
           📂 Choose video
           <input type="file" accept="video/*" onChange={onFileChange} />
         </label>
-        <button onClick={handlePlayPause} disabled={!videoUrl}>
+        <button className="primary" onClick={handlePlayPause} disabled={!videoUrl}>
           {isPlaying ? 'Pause' : 'Play'}
         </button>
-        <div className="pill">
-          Speed:
+        <div className="pill speed-pill">
+          <span>Speed:</span>
           {[0.25, 0.5, 1].map((rate) => (
-            <button key={rate} onClick={() => handleRateChange(rate)} disabled={!videoUrl} style={{ background: playbackRate === rate ? '#0ea5e9' : undefined }}>
+            <button
+              key={rate}
+              onClick={() => handleRateChange(rate)}
+              disabled={!videoUrl}
+              className={playbackRate === rate ? 'active' : ''}
+            >
               {rate}x
             </button>
           ))}
         </div>
-        <button onClick={() => step(-1)} disabled={!videoUrl}>
-          ⬅︎ Prev frame
-        </button>
-        <button onClick={() => step(1)} disabled={!videoUrl}>
-          Next frame ➡︎
-        </button>
+        <div className="stepper">
+          <button onClick={() => step(-1)} disabled={!videoUrl}>
+            ⬅︎ Prev frame
+          </button>
+          <button onClick={() => step(1)} disabled={!videoUrl}>
+            Next frame ➡︎
+          </button>
+        </div>
       </div>
 
       <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <div className="status-bar">
           <span className="chip">Mode: {mode === 'draw' ? 'Draw line' : 'Select/Delete'}</span>
           <span className="chip">Playback: {formattedTime(currentTime)} / {formattedTime(duration || 0)}</span>
-          {videoFile && <span className="chip">{videoFile.name}</span>}
+          {videoFile && <span className="chip file-chip">{videoFile.name}</span>}
         </div>
 
-        <input type="range" min={0} max={duration || 0} step={0.001} value={duration ? currentTime : 0} onChange={(e) => handleSeek(Number(e.target.value))} disabled={!videoUrl} />
+        <input
+          className="seek"
+          type="range"
+          min={0}
+          max={duration || 0}
+          step={0.001}
+          value={duration ? currentTime : 0}
+          onChange={(e) => handleSeek(Number(e.target.value))}
+          disabled={!videoUrl}
+        />
 
         <div className="controls">
-          <button onClick={() => setMode('draw')} disabled={!videoUrl} style={{ background: mode === 'draw' ? '#22c55e' : undefined }}>
+          <button onClick={() => setMode('draw')} disabled={!videoUrl} className={mode === 'draw' ? 'active' : ''}>
             ✏️ Draw line
           </button>
-          <button onClick={() => setMode('select')} disabled={!videoUrl} style={{ background: mode === 'select' ? '#22c55e' : undefined }}>
+          <button onClick={() => setMode('select')} disabled={!videoUrl} className={mode === 'select' ? 'active' : ''}>
             🎯 Select/Delete
           </button>
           <button onClick={deleteSelected} disabled={!selectedId}>
