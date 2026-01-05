@@ -46,6 +46,8 @@ function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const hideTimerRef = useRef<number | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [duration, setDuration] = useState(0);
@@ -58,6 +60,8 @@ function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [history, setHistory] = useState<DrawingAction[]>([]);
   const [redoStack, setRedoStack] = useState<DrawingAction[]>([]);
+  const [sheetSnap, setSheetSnap] = useState<'collapsed' | 'half' | 'full'>('collapsed');
+  const [controlsVisible, setControlsVisible] = useState(true);
 
   useCanvasSize(containerRef, canvasRef);
 
@@ -171,10 +175,22 @@ function App() {
     setRedoStack([]);
   };
 
+  const showControls = (persist = false) => {
+    setControlsVisible(true);
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+    }
+    if (persist || sheetSnap !== 'collapsed' || !isPlaying || draftLine) return;
+    hideTimerRef.current = window.setTimeout(() => {
+      setControlsVisible(false);
+    }, 2600);
+  };
+
   const handlePointerDown = (event: React.PointerEvent) => {
     if (!videoUrl) return;
     const point = toNormalizedPoint(event);
     if (!point) return;
+    showControls(true);
     if (mode === 'draw') {
       const newDraft: LineShape = {
         id: crypto.randomUUID(),
@@ -209,6 +225,7 @@ function App() {
   };
 
   const handleUndo = () => {
+    showControls(true);
     setHistory((prev) => {
       const last = prev[prev.length - 1];
       if (!last) return prev;
@@ -224,6 +241,7 @@ function App() {
   };
 
   const handleRedo = () => {
+    showControls(true);
     setRedoStack((prev) => {
       const last = prev[prev.length - 1];
       if (!last) return prev;
@@ -240,6 +258,7 @@ function App() {
 
   const deleteSelected = () => {
     if (!selectedId) return;
+    showControls(true);
     const line = lines.find((l) => l.id === selectedId);
     if (!line) return;
     setLines((prev) => prev.filter((l) => l.id !== selectedId));
@@ -250,6 +269,7 @@ function App() {
   const handlePlayPause = () => {
     const video = videoRef.current;
     if (!video) return;
+    showControls();
     if (isPlaying) {
       video.pause();
     } else {
@@ -263,11 +283,20 @@ function App() {
     if (videoRef.current) {
       videoRef.current.playbackRate = value;
     }
+    showControls(true);
+  };
+
+  const cycleRate = () => {
+    const options = [0.25, 0.5, 1];
+    const currentIndex = options.indexOf(playbackRate);
+    const next = options[(currentIndex + 1) % options.length];
+    handleRateChange(next);
   };
 
   const step = (direction: number) => {
     const video = videoRef.current;
     if (!video || !duration) return;
+    showControls();
     video.pause();
     const target = Math.min(duration, Math.max(0, video.currentTime + direction * STEP_EPS));
     if ('requestVideoFrameCallback' in video) {
@@ -281,6 +310,7 @@ function App() {
   const handleSeek = (value: number) => {
     const video = videoRef.current;
     if (!video) return;
+    showControls(true);
     video.currentTime = value;
     setCurrentTime(value);
   };
@@ -288,6 +318,7 @@ function App() {
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    showControls(true);
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     const url = URL.createObjectURL(file);
     setVideoFile(file);
@@ -297,6 +328,35 @@ function App() {
     setHistory([]);
     setRedoStack([]);
   };
+
+  const handleModeToggle = () => {
+    showControls(true);
+    setMode((prev) => (prev === 'draw' ? 'select' : 'draw'));
+  };
+
+  const toggleSheet = (nextState?: 'collapsed' | 'half' | 'full') => {
+    setSheetSnap((prev) => {
+      if (nextState) return nextState;
+      return prev === 'collapsed' ? 'half' : 'collapsed';
+    });
+    showControls(true);
+  };
+
+  useEffect(() => {
+    if (!isPlaying || draftLine || sheetSnap !== 'collapsed') {
+      setControlsVisible(true);
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+      return;
+    }
+    hideTimerRef.current = window.setTimeout(() => setControlsVisible(false), 2600);
+    return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, [isPlaying, draftLine, sheetSnap]);
 
   const formattedTime = (time: number) => {
     const minutes = Math.floor(time / 60)
@@ -310,6 +370,17 @@ function App() {
       .padStart(3, '0');
     return `${minutes}:${seconds}.${ms}`;
   };
+
+  const mapping = [
+    { before: 'Upload video (status bar)', after: 'Top icon + Bottom Sheet “Video” section' },
+    { before: 'Play/Pause (toolbar)', after: 'Mini bar primary control' },
+    { before: 'Prev/Next frame (toolbar)', after: 'Mini bar frame-step buttons' },
+    { before: 'Speed pill (toolbar)', after: 'Mini bar quick toggle + Sheet detailed speeds' },
+    { before: 'Mode buttons (controls row)', after: 'Mini bar single toggle (Draw/Select)' },
+    { before: 'Delete selected (controls)', after: 'Bottom Sheet Edit section' },
+    { before: 'Undo/Redo (controls)', after: 'Mini bar Undo + Bottom Sheet Redo' },
+    { before: 'Seek bar (seek row)', after: 'Bottom Sheet timeline' }
+  ];
 
   return (
     <div className="app-screen">
@@ -333,98 +404,178 @@ function App() {
             />
           ) : (
             <div className="empty-state">
-              <p>Select a local swing video to begin.</p>
-              <p className="hint">Tap the Upload button to load a file for analysis.</p>
+              <button className="cta" onClick={() => fileInputRef.current?.click()}>
+                📂 Choose video
+              </button>
+              <p className="hint">Local file stays on device for privacy.</p>
             </div>
           )}
         </div>
 
         <canvas className="canvas-layer" ref={canvasRef} />
 
-        <div className="ui-layer ui-top">
-          <div className="glass-row top-bar">
-            <div>
-              <h1 className="title">Golf Swing Analyzer</h1>
-              <p className="subtitle">
-                Full-screen playback with frame stepping, drawing, and saved annotations.
-              </p>
+        <div className={`ui-layer ui-top ${controlsVisible ? 'visible' : 'faded'}`}>
+          <div className="top-bar-chip glass-row compact">
+            <div className="brand">
+              <span className="dot" />
+              <span className="app-name">Golf Swing Analyzer</span>
             </div>
-            <div className="pill">
-              <span className="tag">PWA</span>
-              Offline-ready shell
+            <div className="top-actions">
+              <button
+                className="icon-button"
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Upload video"
+                disabled={false}
+              >
+                📂
+              </button>
+              <div className="pill tight">
+                <span className="tag">PWA</span>
+                Offline
+              </div>
             </div>
-          </div>
-          <div className="glass-row status-bar">
-            <label className="file-label">
-              📂 Upload video
-              <input type="file" accept="video/*" onChange={onFileChange} />
-            </label>
-            <span className="chip">Mode: {mode === 'draw' ? 'Draw line' : 'Select/Delete'}</span>
-            <span className="chip">Playback: {formattedTime(currentTime)} / {formattedTime(duration || 0)}</span>
-            {videoFile && <span className="chip file-chip">{videoFile.name}</span>}
           </div>
         </div>
 
-        <div className="ui-layer ui-bottom">
-          <div className="glass-row toolbar">
-            <button className="primary" onClick={handlePlayPause} disabled={!videoUrl}>
+        <div className={`ui-layer ui-bottom ${controlsVisible ? 'visible' : 'faded'}`}>
+          <div className="mini-bar glass-row compact">
+            <button className="icon-button" onClick={() => step(-1)} disabled={!videoUrl} aria-label="Previous frame">
+              ◀
+            </button>
+            <button className="primary icon-button wide" onClick={handlePlayPause} disabled={!videoUrl} aria-label="Play or pause">
               {isPlaying ? 'Pause' : 'Play'}
             </button>
-            <div className="pill speed-pill">
-              <span>Speed:</span>
-              {[0.25, 0.5, 1].map((rate) => (
-                <button
-                  key={rate}
-                  onClick={() => handleRateChange(rate)}
-                  disabled={!videoUrl}
-                  className={playbackRate === rate ? 'active' : ''}
-                >
-                  {rate}x
+            <button className="icon-button" onClick={() => step(1)} disabled={!videoUrl} aria-label="Next frame">
+              ▶
+            </button>
+            <button className="icon-button" onClick={handleUndo} disabled={!history.length} aria-label="Undo last line">
+              ↩️
+            </button>
+            <button className="icon-button" onClick={handleModeToggle} disabled={!videoUrl} aria-label="Toggle draw or select mode">
+              {mode === 'draw' ? '✏️' : '🎯'}
+            </button>
+            <button className="icon-button" onClick={() => toggleSheet()} aria-label="Show more controls">
+              {sheetSnap === 'collapsed' ? '⌃' : '⌄'}
+            </button>
+          </div>
+        </div>
+
+        <div className={`bottom-sheet ${sheetSnap}`}>
+          <div className={`sheet-backdrop ${sheetSnap === 'collapsed' ? 'hidden' : ''}`} onClick={() => toggleSheet('collapsed')} />
+          <div className="sheet-surface" role="dialog" aria-label="Playback controls">
+            <div className="sheet-handle" onClick={() => toggleSheet(sheetSnap === 'half' ? 'full' : sheetSnap === 'full' ? 'half' : 'half')}>
+              <span className="grip" />
+            </div>
+
+            <div className="sheet-grid">
+              <section>
+                <header>
+                  <h3>Video</h3>
+                  <small>Local only</small>
+                </header>
+                <button className="wide" onClick={() => fileInputRef.current?.click()}>
+                  📂 Upload / Choose
                 </button>
-              ))}
-            </div>
-            <div className="stepper">
-              <button onClick={() => step(-1)} disabled={!videoUrl}>
-                ⬅︎ Prev frame
-              </button>
-              <button onClick={() => step(1)} disabled={!videoUrl}>
-                Next frame ➡︎
-              </button>
-            </div>
-          </div>
+                {videoFile && <p className="meta">{videoFile.name}</p>}
+              </section>
 
-          <div className="glass-row seek-row">
-            <input
-              className="seek"
-              type="range"
-              min={0}
-              max={duration || 0}
-              step={0.001}
-              value={duration ? currentTime : 0}
-              onChange={(e) => handleSeek(Number(e.target.value))}
-              disabled={!videoUrl}
-            />
-          </div>
+              <section>
+                <header>
+                  <h3>Speed</h3>
+                  <small>0.25x / 0.5x / 1.0x</small>
+                </header>
+                <div className="pill speed-group">
+                  {[0.25, 0.5, 1].map((rate) => (
+                    <button
+                      key={rate}
+                      onClick={() => handleRateChange(rate)}
+                      disabled={!videoUrl}
+                      className={playbackRate === rate ? 'active' : ''}
+                    >
+                      {rate}x
+                    </button>
+                  ))}
+                  <button className="ghost" onClick={cycleRate} disabled={!videoUrl}>
+                    Cycle
+                  </button>
+                </div>
+              </section>
 
-          <div className="glass-row controls">
-            <button onClick={() => setMode('draw')} disabled={!videoUrl} className={mode === 'draw' ? 'active' : ''}>
-              ✏️ Draw line
-            </button>
-            <button onClick={() => setMode('select')} disabled={!videoUrl} className={mode === 'select' ? 'active' : ''}>
-              🎯 Select/Delete
-            </button>
-            <button onClick={deleteSelected} disabled={!selectedId}>
-              🗑️ Delete selected
-            </button>
-            <button onClick={handleUndo} disabled={!history.length}>
-              ↩️ Undo
-            </button>
-            <button onClick={handleRedo} disabled={!redoStack.length}>
-              ↪️ Redo
-            </button>
+              <section>
+                <header>
+                  <h3>Timeline</h3>
+                  <small>Seek without default UI</small>
+                </header>
+                <input
+                  className="seek"
+                  type="range"
+                  min={0}
+                  max={duration || 0}
+                  step={0.001}
+                  value={duration ? currentTime : 0}
+                  onChange={(e) => handleSeek(Number(e.target.value))}
+                  disabled={!videoUrl}
+                />
+                <div className="meta">
+                  {formattedTime(currentTime)} / {formattedTime(duration || 0)}
+                </div>
+              </section>
+
+              <section>
+                <header>
+                  <h3>Edit</h3>
+                  <small>Select / delete lines</small>
+                </header>
+                <div className="edit-row">
+                  <button onClick={() => setMode('draw')} disabled={!videoUrl} className={mode === 'draw' ? 'active' : ''}>
+                    ✏️ Draw
+                  </button>
+                  <button onClick={() => setMode('select')} disabled={!videoUrl} className={mode === 'select' ? 'active' : ''}>
+                    🎯 Select
+                  </button>
+                  <button onClick={deleteSelected} disabled={!selectedId}>
+                    🗑️ Delete
+                  </button>
+                  <button onClick={handleRedo} disabled={!redoStack.length}>
+                    ↪️ Redo
+                  </button>
+                </div>
+              </section>
+
+              <section>
+                <header>
+                  <h3>Status</h3>
+                  <small>Playback + mode</small>
+                </header>
+                <div className="status-grid">
+                  <div className="chip">Mode: {mode === 'draw' ? 'Draw line' : 'Select/Delete'}</div>
+                  <div className="chip">Playback: {formattedTime(currentTime)} / {formattedTime(duration || 0)}</div>
+                  {videoFile && <div className="chip file-chip">File: {videoFile.name}</div>}
+                  <div className="chip">Rate: {playbackRate}x</div>
+                </div>
+              </section>
+
+              <section className="mapping">
+                <header>
+                  <h3>Before → After</h3>
+                  <small>Where controls moved</small>
+                </header>
+                <div className="mapping-grid">
+                  {mapping.map((row) => (
+                    <div key={row.before} className="mapping-row">
+                      <span>{row.before}</span>
+                      <span>→</span>
+                      <strong>{row.after}</strong>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
         </div>
       </div>
+
+      <input ref={fileInputRef} type="file" accept="video/*" onChange={onFileChange} className="file-input" />
     </div>
   );
 }
