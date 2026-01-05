@@ -312,34 +312,37 @@ function App() {
   };
 
   return (
-    <div className="app-shell">
+    <div className="app-screen">
       <div
-        className="video-shell"
+        className="screen"
         ref={containerRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        {videoUrl ? (
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            controls={false}
-            playsInline
-            disablePictureInPicture
-            controlsList="nodownload noremoteplayback nofullscreen"
-            aria-label="Swing video"
-          />
-        ) : (
-          <div className="empty-state">
-            <p>Select a local swing video to begin.</p>
-            <p className="hint">Tap the Upload button to load a file for analysis.</p>
-          </div>
-        )}
-        <canvas className="overlay" ref={canvasRef} />
+        <div className="video-layer">
+          {videoUrl ? (
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              controls={false}
+              playsInline
+              disablePictureInPicture
+              controlsList="nodownload noremoteplayback nofullscreen"
+              aria-label="Swing video"
+            />
+          ) : (
+            <div className="empty-state">
+              <p>Select a local swing video to begin.</p>
+              <p className="hint">Tap the Upload button to load a file for analysis.</p>
+            </div>
+          )}
+        </div>
 
-        <div className="overlay-layer overlay-top">
-          <div className="glass-row">
+        <canvas className="canvas-layer" ref={canvasRef} />
+
+        <div className="ui-layer ui-top">
+          <div className="glass-row top-bar">
             <div>
               <h1 className="title">Golf Swing Analyzer</h1>
               <p className="subtitle">
@@ -362,7 +365,7 @@ function App() {
           </div>
         </div>
 
-        <div className="overlay-layer overlay-bottom">
+        <div className="ui-layer ui-bottom">
           <div className="glass-row toolbar">
             <button className="primary" onClick={handlePlayPause} disabled={!videoUrl}>
               {isPlaying ? 'Pause' : 'Play'}
