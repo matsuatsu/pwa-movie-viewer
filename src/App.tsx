@@ -6,7 +6,7 @@ import { loadDrawing, saveDrawing } from './storage';
 
 const STEP_EPS = 1 / 120;
 const HISTORY_LIMIT = 50;
-const HANDLE_VISUAL_RADIUS = 14;
+const HANDLE_VISUAL_RADIUS = 7;
 const HANDLE_HIT_RADIUS = 32;
 const LINE_HIT_THRESHOLD = 18;
 
@@ -224,7 +224,7 @@ function App() {
         const cx = videoBounds.x + p.x * videoBounds.width;
         const cy = videoBounds.y + p.y * videoBounds.height;
         ctx.beginPath();
-        ctx.arc(cx, cy, HANDLE_VISUAL_RADIUS + 4, 0, Math.PI * 2);
+        ctx.arc(cx, cy, HANDLE_VISUAL_RADIUS + 2, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
         ctx.beginPath();
@@ -609,26 +609,6 @@ function App() {
     return `${minutes}:${seconds}.${ms}`;
   };
 
-  const mapping = [
-    { before: 'Draw/Edit + line tools in bottom bar', after: 'Moved to compact Top Bar chips' },
-    { before: 'Undo/Redo inside bottom bar/More', after: 'Top Bar undo/redo alongside mode' },
-    { before: 'Delete selected in sheet', after: 'Dedicated Top Bar delete (selected only)' },
-    { before: 'Speed change hidden in sheet', after: 'Speed chip in video bar + sheet fallback' },
-    { before: 'Upload only via sheet/CTA', after: 'Top Bar upload shortcut + sheet entry' },
-    { before: 'More sheet mixed line/video actions', after: 'Sheet trimmed to video & speed only' }
-  ];
-
-  const layoutDiagram = `Top Bar (lines)
-├─ Draw/Edit | Undo | Redo | Delete | Upload | Status chip
-
-Bottom Bar (video)
-├─ Row A: Timecode | Seek bar (wide)
-└─ Row B: Prev | Play/Pause (wide) | Next | Speed | More
-
-More Sheet (video only)
-├─ Video & Speed selection
-└─ Playback helpers + status`;
-
   const seekbarNotes = [
     'Visible track height ~10px with 44px+ touch padding',
     'Current/Total time kept beside bar for glanceable reading',
@@ -674,7 +654,6 @@ More Sheet (video only)
           <div className="top-bar-chip glass-row compact">
             <div className="brand">
               <span className="dot" />
-              <span className="app-name">Golf Swing Analyzer</span>
             </div>
             <div className="top-actions">
               <button
@@ -707,10 +686,6 @@ More Sheet (video only)
               >
                 📂 Upload
               </button>
-              <div className="pill tight status-pill" aria-label="PWA status">
-                <span className="tag">PWA</span>
-                Offline ready
-              </div>
             </div>
           </div>
         </div>
@@ -718,22 +693,14 @@ More Sheet (video only)
         <div className={`ui-layer ui-bottom ${controlsVisible ? 'visible' : 'faded'}`}>
           <div className="bottom-controls">
             <div className="seek-row glass-row">
-              <div className="timecode dual" role="text" aria-label="Current and total time" onClick={() => toggleSheet('half')}>
-                {formattedTime(currentTime)} / {formattedTime(duration || 0)}
-              </div>
-              <div className="seek-touch">
-                <input
-                  className="seek-bar"
-                  type="range"
-                  min={0}
-                  max={hasDuration ? duration : 0}
-                  step={0.001}
-                  value={hasDuration ? currentTime : 0}
-                  onChange={(e) => handleSeek(Number(e.target.value))}
-                  disabled={!hasDuration}
-                  aria-label="Seek timeline"
-                />
-              </div>
+              <button
+                className="primary wide"
+                onClick={() => toggleSheet('half')}
+                disabled={!videoUrl}
+                aria-label="Open video controls"
+              >
+                Open video controls
+              </button>
             </div>
 
             <div className="button-row glass-row compact">
@@ -837,30 +804,6 @@ More Sheet (video only)
                     <span>/</span>
                     <span>{formattedTime(duration || 0)}</span>
                     <span>• {playbackRate}x</span>
-                  </div>
-                </section>
-
-                <section>
-                  <header>
-                    <h3>Layout diagram</h3>
-                    <small>Top vs bottom controls</small>
-                  </header>
-                  <pre className="code-block">{layoutDiagram}</pre>
-                </section>
-
-                <section>
-                  <header>
-                    <h3>Before → After</h3>
-                    <small>Where controls moved</small>
-                  </header>
-                  <div className="mapping-grid">
-                    {mapping.map((row) => (
-                      <div key={row.before} className="mapping-row">
-                        <span>{row.before}</span>
-                        <span>→</span>
-                        <strong>{row.after}</strong>
-                      </div>
-                    ))}
                   </div>
                 </section>
               </div>
