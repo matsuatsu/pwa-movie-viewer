@@ -67,7 +67,7 @@ export function ControlsOverlay({
   const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2';
 
   const btnBase =
-    'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[0.9rem] border border-slate-700 bg-slate-800 px-3 py-2.5 font-semibold text-slate-200 ' +
+    'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[0.9rem] border border-slate-700 bg-slate-800 px-3 py-2.5 font-semibold text-slate-200 select-none ' +
     'transition-[transform,box-shadow,background,opacity] duration-150 hover:-translate-y-px hover:bg-slate-900 hover:shadow-[0_8px_20px_rgba(0,0,0,0.3)] ' +
     'disabled:cursor-not-allowed disabled:opacity-45';
   const iconWithLabel = 'flex-col gap-1.5 text-center leading-tight';
@@ -78,6 +78,8 @@ export function ControlsOverlay({
   );
   const sidebarActive = 'bg-emerald-500/20 text-emerald-100 border-emerald-300/45';
   const chipButton = cx(btnBase, 'h-[44px] min-w-[44px] px-2 py-1.5 text-[0.9rem]');
+
+  const preventContextMenu = (event: React.MouseEvent) => event.preventDefault();
 
   return (
     <>
@@ -125,6 +127,7 @@ export function ControlsOverlay({
             onPointerUp={onStepBackEnd}
             onPointerLeave={onStepBackEnd}
             onPointerCancel={onStepBackEnd}
+            onContextMenu={preventContextMenu}
             disabled={!hasVideo}
             aria-label="1フレーム戻す"
           >
@@ -169,6 +172,7 @@ export function ControlsOverlay({
             onPointerUp={onStepForwardEnd}
             onPointerLeave={onStepForwardEnd}
             onPointerCancel={onStepForwardEnd}
+            onContextMenu={preventContextMenu}
             disabled={!hasVideo}
             aria-label="1フレーム進める"
           >
