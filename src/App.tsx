@@ -761,19 +761,13 @@ function App() {
               </button>
             </div>
             <div className="pill speed-group compact">
-              {[0.25, 0.5, 1].map((rate) => (
-                <button
-                  key={rate}
-                  onClick={() => handleRateChange(rate)}
-                  disabled={!videoUrl}
-                  className={playbackRate === rate ? 'active' : ''}
-                  aria-label={`${rate}倍速で再生`}
-                >
-                  {rate}x
-                </button>
-              ))}
-              <button className="ghost" onClick={cycleRate} disabled={!videoUrl} aria-label="再生速度を順送り変更">
+              <button
+                onClick={cycleRate}
+                disabled={!videoUrl}
+                aria-label="再生速度を順送り変更"
+              >
                 <Repeat aria-hidden size={18} />
+                {playbackRate}x
               </button>
             </div>
           </div>
@@ -839,19 +833,9 @@ function App() {
                   </button>
                   {videoFile && <p className="meta">{videoFile.name}</p>}
                   <div className="pill speed-group">
-                    {[0.25, 0.5, 1].map((rate) => (
-                      <button
-                        key={rate}
-                        onClick={() => handleRateChange(rate)}
-                        disabled={!videoUrl}
-                        className={playbackRate === rate ? 'active' : ''}
-                      >
-                        {rate}x
-                      </button>
-                    ))}
-                    <button className="ghost" onClick={cycleRate} disabled={!videoUrl}>
+                    <button onClick={cycleRate} disabled={!videoUrl} aria-label="再生速度を順送り変更">
                       <Repeat aria-hidden size={18} />
-                      Cycle
+                      {playbackRate}x
                     </button>
                   </div>
                 </section>
