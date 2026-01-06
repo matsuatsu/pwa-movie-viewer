@@ -468,6 +468,19 @@ export default function App() {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
+        {videoUrl && (
+          <div className="pointer-events-none absolute left-0 top-0 z-[4] p-3">
+            <button
+              className={ctaButton}
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="動画を選択"
+              title="動画を選択"
+            >
+              <FolderOpen aria-hidden size={20} />
+              Choose video
+            </button>
+          </div>
+        )}
         <div className="absolute inset-0">
           {videoUrl ? (
             <video
@@ -509,7 +522,6 @@ export default function App() {
           onRedo={handleRedo}
           onDelete={deleteSelected}
           onStepBack={() => step(-1)}
-          onUpload={() => fileInputRef.current?.click()}
           onCycleRate={cycleRate}
           onPlayPause={handlePlayPause}
           onStepForward={() => step(1)}
