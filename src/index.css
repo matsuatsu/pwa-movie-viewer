@@ -318,22 +318,6 @@ video {
   gap: 0.5rem;
 }
 
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.brand .dot {
-  width: 10px;
-  height: 10px;
-  background: #22c55e;
-  border-radius: 50%;
-  box-shadow: 0 0 12px #22c55e;
-}
-
 .app-name {
   font-size: 0.95rem;
   text-transform: uppercase;

@@ -10,7 +10,6 @@ import {
   Pencil,
   Play,
   Redo2,
-  Repeat,
   StepBack,
   StepForward,
   Trash2,
@@ -668,9 +667,6 @@ function App() {
 
         <div className={`ui-layer ui-top ${controlsVisible ? 'visible' : 'faded'}`}>
           <div className="top-bar-chip glass-row compact">
-            <div className="brand">
-              <span className="dot" />
-            </div>
             <div className="top-actions">
               <button
                 className={`icon-button chip-button ${mode === 'select' ? 'active' : ''}`}
@@ -766,7 +762,6 @@ function App() {
                 disabled={!videoUrl}
                 aria-label="再生速度を順送り変更"
               >
-                <Repeat aria-hidden size={18} />
                 {playbackRate}x
               </button>
             </div>
@@ -775,7 +770,7 @@ function App() {
           <div className="glass-row bottom-slider-row compact">
             <div className="bottom-time-meta">
               <small className="top-helper-time">
-                {formattedTime(hasDuration ? currentTime : 0)} / {formattedTime(hasDuration ? duration : 0)} · {playbackRate}x
+                {formattedTime(hasDuration ? currentTime : 0)} / {formattedTime(hasDuration ? duration : 0)}
               </small>
             </div>
             <div className="bottom-slider">
@@ -834,7 +829,6 @@ function App() {
                   {videoFile && <p className="meta">{videoFile.name}</p>}
                   <div className="pill speed-group">
                     <button onClick={cycleRate} disabled={!videoUrl} aria-label="再生速度を順送り変更">
-                      <Repeat aria-hidden size={18} />
                       {playbackRate}x
                     </button>
                   </div>
