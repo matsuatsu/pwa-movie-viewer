@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import './index.css';
 import { DrawingAction, LineShape, Point } from './types';
@@ -475,7 +475,7 @@ function App() {
     });
   };
 
-  const deleteSelected = () => {
+  const deleteSelected = useCallback(() => {
     if (!selectedId) return;
     showControls(true);
     const line = lines.find((l) => l.id === selectedId);
@@ -483,7 +483,22 @@ function App() {
     setLines((prev) => prev.filter((l) => l.id !== selectedId));
     pushHistory({ type: 'delete', line });
     setSelectedId(null);
-  };
+  }, [lines, selectedId]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Delete' || !selectedId) return;
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
+        return;
+      }
+      event.preventDefault();
+      deleteSelected();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [deleteSelected, selectedId]);
 
   const handlePlayPause = () => {
     const video = videoRef.current;
