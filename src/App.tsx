@@ -663,61 +663,75 @@ function App() {
           )}
         </div>
 
-        <canvas className="canvas-layer" ref={canvasRef} />
+        <canvas
+          className="canvas-layer"
+          ref={canvasRef}
+          style={{ pointerEvents: videoUrl ? 'auto' : 'none' }}
+        />
 
-        <div className={`ui-layer ui-top ${controlsVisible ? 'visible' : 'faded'}`}>
-          <div className="top-bar-chip glass-row compact">
-            <div className="top-actions">
-              <button
-                className={`icon-button chip-button ${mode === 'select' ? 'active' : ''}`}
-                onClick={handleModeToggle}
-                disabled={!videoUrl}
-                aria-label="Toggle draw or edit"
-                title="Toggle draw or edit"
-              >
-                {mode === 'draw' ? (
-                  <>
-                    <Pencil aria-hidden size={18} />
-                    Draw
-                  </>
-                ) : (
-                  <>
-                    <MousePointer2 aria-hidden size={18} />
-                    Edit
-                  </>
-                )}
-              </button>
-              <button className="icon-button chip-button" onClick={handleUndo} disabled={!history.length} aria-label="Undo">
-                <Undo2 aria-hidden size={18} />
-                Undo
-              </button>
-              <button className="icon-button chip-button" onClick={handleRedo} disabled={!redoStack.length} aria-label="Redo">
-                <Redo2 aria-hidden size={18} />
-                Redo
-              </button>
-              <button
-                className="icon-button chip-button"
-                onClick={deleteSelected}
-                disabled={!selectedId}
-                aria-label="Delete selected"
-              >
-                <Trash2 aria-hidden size={18} />
-                Delete
-              </button>
-              <button
-                className="icon-button chip-button"
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="Upload video"
-              >
-                <Upload aria-hidden size={18} />
-                Upload
+        <div className={`sidebar-layer ${controlsVisible ? 'visible' : 'faded'}`}>
+          <div className="glass-column sidebar left-sidebar">
+            <button
+              className={`icon-button chip-button ${mode === 'select' ? 'active' : ''}`}
+              onClick={handleModeToggle}
+              disabled={!videoUrl}
+              aria-label="Toggle draw or edit"
+              title="Toggle draw or edit"
+            >
+              {mode === 'draw' ? (
+                <>
+                  <Pencil aria-hidden size={18} />
+                  Draw
+                </>
+              ) : (
+                <>
+                  <MousePointer2 aria-hidden size={18} />
+                  Edit
+                </>
+              )}
+            </button>
+            <button className="icon-button chip-button" onClick={handleUndo} disabled={!history.length} aria-label="Undo">
+              <Undo2 aria-hidden size={18} />
+              Undo
+            </button>
+            <button className="icon-button chip-button" onClick={handleRedo} disabled={!redoStack.length} aria-label="Redo">
+              <Redo2 aria-hidden size={18} />
+              Redo
+            </button>
+            <button
+              className="icon-button chip-button"
+              onClick={deleteSelected}
+              disabled={!selectedId}
+              aria-label="Delete selected"
+            >
+              <Trash2 aria-hidden size={18} />
+              Delete
+            </button>
+            <button
+              className="icon-button chip-button"
+              onClick={() => step(-1)}
+              disabled={!videoUrl}
+              aria-label="1フレーム戻す"
+            >
+              <StepBack aria-hidden size={18} />
+              -1f
+            </button>
+          </div>
+
+          <div className="glass-column sidebar right-sidebar">
+            <button
+              className="icon-button chip-button"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="Upload video"
+            >
+              <Upload aria-hidden size={18} />
+              Upload
+            </button>
+            <div className="pill speed-group compact">
+              <button onClick={cycleRate} disabled={!videoUrl} aria-label="再生速度を順送り変更">
+                {playbackRate}x
               </button>
             </div>
-          </div>
-        </div>
-
-        <div className={`ui-layer ui-bottom ${controlsVisible ? 'visible' : 'faded'}`}>
-          <div className="glass-row bottom-control-row compact">
             <button
               className="play-button"
               onClick={handlePlayPause}
@@ -736,37 +750,19 @@ function App() {
                 </>
               )}
             </button>
-            <div className="step-group">
-              <button
-                className="icon-button chip-button"
-                onClick={() => step(-1)}
-                disabled={!videoUrl}
-                aria-label="1フレーム戻す"
-              >
-                <StepBack aria-hidden size={18} />
-                -1f
-              </button>
-              <button
-                className="icon-button chip-button"
-                onClick={() => step(1)}
-                disabled={!videoUrl}
-                aria-label="1フレーム進める"
-              >
-                <StepForward aria-hidden size={18} />
-                +1f
-              </button>
-            </div>
-            <div className="pill speed-group compact">
-              <button
-                onClick={cycleRate}
-                disabled={!videoUrl}
-                aria-label="再生速度を順送り変更"
-              >
-                {playbackRate}x
-              </button>
-            </div>
+            <button
+              className="icon-button chip-button"
+              onClick={() => step(1)}
+              disabled={!videoUrl}
+              aria-label="1フレーム進める"
+            >
+              <StepForward aria-hidden size={18} />
+              +1f
+            </button>
           </div>
+        </div>
 
+        <div className={`ui-layer ui-bottom ${controlsVisible ? 'visible' : 'faded'}`}>
           <div className="glass-row bottom-slider-row compact">
             <div className="bottom-time-meta">
               <small className="top-helper-time">
