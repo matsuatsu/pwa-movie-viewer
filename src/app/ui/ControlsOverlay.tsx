@@ -4,6 +4,7 @@ import {
   Pause,
   Pencil,
   Play,
+  Rewind,
   Redo2,
   StepBack,
   StepForward,
@@ -19,6 +20,7 @@ type Props = {
   controlsVisible: boolean;
   mode: Mode;
   isPlaying: boolean;
+  isReversing: boolean;
   playbackRate: number;
   hasVideo: boolean;
   hasDuration: boolean;
@@ -34,6 +36,7 @@ type Props = {
   onStepBack: () => void;
   onCycleRate: () => void;
   onPlayPause: () => void;
+  onReverse: () => void;
   onStepForward: () => void;
   onSeek: (value: number) => void;
 };
@@ -42,6 +45,7 @@ export function ControlsOverlay({
   controlsVisible,
   mode,
   isPlaying,
+  isReversing,
   playbackRate,
   hasVideo,
   hasDuration,
@@ -57,6 +61,7 @@ export function ControlsOverlay({
   onStepBack,
   onCycleRate,
   onPlayPause,
+  onReverse,
   onStepForward,
   onSeek,
 }: Props) {
@@ -148,6 +153,24 @@ export function ControlsOverlay({
               <>
                 <Play aria-hidden size={18} />
                 再生
+              </>
+            )}
+          </button>
+          <button
+            className={cx(btnBase, iconWithLabel, 'bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none')}
+            onClick={onReverse}
+            disabled={!hasVideo}
+            aria-label={isReversing ? '逆再生を停止' : '逆再生'}
+          >
+            {isReversing ? (
+              <>
+                <Pause aria-hidden size={18} />
+                逆再生停止
+              </>
+            ) : (
+              <>
+                <Rewind aria-hidden size={18} />
+                逆再生
               </>
             )}
           </button>

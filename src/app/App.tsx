@@ -27,6 +27,9 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
   const editSessionRef = useRef<EditSession | null>(null);
+  const reverseFrameRef = useRef<number | null>(null);
+  const reverseLastTimeRef = useRef<number | null>(null);
+  const reverseActiveRef = useRef(false);
 
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -42,6 +45,8 @@ export default function App() {
   const [redoStack, setRedoStack] = useState<DrawingAction[]>([]);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [videoBounds, setVideoBounds] = useState<Rect | null>(null);
+  const [isReversing, setIsReversing] = useState(false);
+  const playbackRateRef = useRef(playbackRate);
 
   useViewportHeight();
   useCanvasSize(containerRef, canvasRef, videoRef, setVideoBounds);
@@ -53,9 +58,24 @@ export default function App() {
   );
 
   useEffect(() => {
+    playbackRateRef.current = playbackRate;
+  }, [playbackRate]);
+
+  const stopReversePlayback = useCallback(() => {
+    reverseActiveRef.current = false;
+    if (reverseFrameRef.current) {
+      cancelAnimationFrame(reverseFrameRef.current);
+      reverseFrameRef.current = null;
+    }
+    reverseLastTimeRef.current = null;
+    setIsReversing(false);
+  }, []);
+
+  useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     const handleLoaded = () => {
+      stopReversePlayback();
       setDuration(video.duration);
       setCurrentTime(0);
       video.playbackRate = playbackRate;
@@ -91,7 +111,10 @@ export default function App() {
       }
     };
     const updateTime = () => setCurrentTime(video.currentTime);
-    const handlePlay = () => setIsPlaying(true);
+    const handlePlay = () => {
+      stopReversePlayback();
+      setIsPlaying(true);
+    };
     const handlePause = () => setIsPlaying(false);
     video.addEventListener('loadedmetadata', handleLoaded);
     video.addEventListener('timeupdate', updateTime);
@@ -103,7 +126,7 @@ export default function App() {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, [playbackRate, videoKey]);
+  }, [playbackRate, stopReversePlayback, videoKey]);
 
   useEffect(() => {
     if (!videoKey) return;
@@ -115,6 +138,10 @@ export default function App() {
       if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
   }, [videoUrl]);
+
+  useEffect(() => {
+    return () => stopReversePlayback();
+  }, [stopReversePlayback]);
 
   const toNormalizedPoint = (event: React.PointerEvent) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -144,11 +171,40 @@ export default function App() {
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
     }
-    if (persist || !isPlaying || draftLine) return;
+    if (persist || (!isPlaying && !isReversing) || draftLine) return;
     hideTimerRef.current = window.setTimeout(() => {
       setControlsVisible(false);
     }, 2600);
   };
+
+  const startReversePlayback = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || !duration) return;
+    showControls();
+    video.pause();
+    setIsPlaying(false);
+    reverseActiveRef.current = true;
+    setIsReversing(true);
+
+    const tick = (timestamp: number) => {
+      if (!reverseActiveRef.current) return;
+      if (reverseLastTimeRef.current !== null) {
+        const delta = (timestamp - reverseLastTimeRef.current) / 1000;
+        const stepAmount = delta * playbackRateRef.current;
+        const target = Math.max(0, video.currentTime - stepAmount);
+        video.currentTime = target;
+        setCurrentTime(target);
+        if (target <= 0) {
+          stopReversePlayback();
+          return;
+        }
+      }
+      reverseLastTimeRef.current = timestamp;
+      reverseFrameRef.current = requestAnimationFrame(tick);
+    };
+
+    reverseFrameRef.current = requestAnimationFrame(tick);
+  }, [duration, showControls, stopReversePlayback]);
 
   const findHit = (point: Point): { line: LineShape | null; target: DragType | null } => {
     if (!videoBounds) return { line: null, target: null as DragType | null };
@@ -366,6 +422,7 @@ export default function App() {
   const handlePlayPause = () => {
     const video = videoRef.current;
     if (!video) return;
+    stopReversePlayback();
     showControls();
     if (isPlaying) {
       video.pause();
@@ -393,6 +450,7 @@ export default function App() {
   const step = (direction: number) => {
     const video = videoRef.current;
     if (!video || !duration) return;
+    stopReversePlayback();
     showControls();
     video.pause();
     const target = Math.min(duration, Math.max(0, video.currentTime + direction * STEP_EPS));
@@ -404,9 +462,20 @@ export default function App() {
     video.currentTime = target;
   };
 
+  const handleReverseToggle = () => {
+    const video = videoRef.current;
+    if (!video || !duration) return;
+    if (isReversing) {
+      stopReversePlayback();
+    } else {
+      startReversePlayback();
+    }
+  };
+
   const handleSeek = (value: number) => {
     const video = videoRef.current;
     if (!video || !duration) return;
+    stopReversePlayback();
     showControls(true);
     video.currentTime = value;
     setCurrentTime(value);
@@ -443,7 +512,7 @@ export default function App() {
         hideTimerRef.current = null;
       }
     };
-  }, [isPlaying, draftLine, mode, selectedId]);
+  }, [draftLine, isPlaying, isReversing, mode, selectedId]);
 
   const hasDuration = Boolean(duration && !Number.isNaN(duration));
   const hasVideo = Boolean(videoUrl);
@@ -509,6 +578,7 @@ export default function App() {
           controlsVisible={controlsVisible}
           mode={mode}
           isPlaying={isPlaying}
+          isReversing={isReversing}
           playbackRate={playbackRate}
           hasVideo={hasVideo}
           hasDuration={hasDuration}
@@ -524,6 +594,7 @@ export default function App() {
           onStepBack={() => step(-1)}
           onCycleRate={cycleRate}
           onPlayPause={handlePlayPause}
+          onReverse={handleReverseToggle}
           onStepForward={() => step(1)}
           onSeek={handleSeek}
         />
