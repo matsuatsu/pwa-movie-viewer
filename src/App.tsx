@@ -676,7 +676,7 @@ function App() {
 
         <div
           className={cx(
-            'pointer-events-none absolute left-0 right-0 bottom-[calc(60px+var(--safe-bottom))] z-[3] flex items-end justify-between px-1 transition-[opacity,transform] duration-200',
+            'pointer-events-none absolute left-0 right-0 bottom-[calc(80px+var(--safe-bottom))] z-[3] flex items-end justify-between px-1 transition-[opacity,transform] duration-200',
             fadeClass
           )}
         >
