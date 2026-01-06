@@ -834,8 +834,10 @@ function App() {
         <div className="pointer-events-none absolute inset-0 z-[4]">
           <div
             className={cx(
-              'pointer-events-auto absolute inset-0 bg-black/45 opacity-100 backdrop-blur-[2px] transition-opacity duration-200',
-              sheetSnap === 'collapsed' && 'pointer-events-none opacity-0'
+              'pointer-events-auto absolute inset-0 bg-black/45 transition-opacity duration-200',
+              sheetSnap === 'collapsed'
+                ? 'pointer-events-none opacity-0 backdrop-blur-0'
+                : 'opacity-100 backdrop-blur-[2px]'
             )}
             onClick={() => toggleSheet('collapsed')}
           />
