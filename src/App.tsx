@@ -688,14 +688,61 @@ function App() {
               </button>
             </div>
           </div>
-          <div className="glass-row top-helper-row compact">
-            <div className="top-helper-meta">
-              <strong>Playback helper</strong>
+        </div>
+
+        <div className={`ui-layer ui-bottom ${controlsVisible ? 'visible' : 'faded'}`}>
+          <div className="glass-row bottom-control-row compact">
+            <button
+              className="play-button"
+              onClick={handlePlayPause}
+              disabled={!videoUrl}
+              aria-label={isPlaying ? '一時停止' : '再生'}
+            >
+              {isPlaying ? '⏸️ 一時停止' : '▶️ 再生'}
+            </button>
+            <div className="step-group">
+              <button
+                className="icon-button chip-button"
+                onClick={() => step(-1)}
+                disabled={!videoUrl}
+                aria-label="1フレーム戻す"
+              >
+                ⏪ -1f
+              </button>
+              <button
+                className="icon-button chip-button"
+                onClick={() => step(1)}
+                disabled={!videoUrl}
+                aria-label="1フレーム進める"
+              >
+                ⏩ +1f
+              </button>
+            </div>
+            <div className="pill speed-group compact">
+              {[0.25, 0.5, 1].map((rate) => (
+                <button
+                  key={rate}
+                  onClick={() => handleRateChange(rate)}
+                  disabled={!videoUrl}
+                  className={playbackRate === rate ? 'active' : ''}
+                  aria-label={`${rate}倍速で再生`}
+                >
+                  {rate}x
+                </button>
+              ))}
+              <button className="ghost" onClick={cycleRate} disabled={!videoUrl} aria-label="再生速度を順送り変更">
+                🔁
+              </button>
+            </div>
+          </div>
+
+          <div className="glass-row bottom-slider-row compact">
+            <div className="bottom-time-meta">
               <small className="top-helper-time">
                 {formattedTime(hasDuration ? currentTime : 0)} / {formattedTime(hasDuration ? duration : 0)} · {playbackRate}x
               </small>
             </div>
-            <div className="top-helper-slider">
+            <div className="bottom-slider">
               <input
                 className="seek-bar"
                 type="range"
@@ -705,43 +752,8 @@ function App() {
                 value={hasDuration ? currentTime : 0}
                 onChange={(e) => handleSeek(Number(e.target.value))}
                 disabled={!hasDuration}
-                aria-label="Seek timeline"
+                aria-label="シークバー"
               />
-            </div>
-          </div>
-        </div>
-
-        <div className={`ui-layer ui-bottom ${controlsVisible ? 'visible' : 'faded'}`}>
-          <div className="bottom-controls">
-            <div className="seek-row glass-row">
-              <button
-                className="primary wide"
-                onClick={() => toggleSheet('half')}
-                disabled={!videoUrl}
-                aria-label="Open video controls"
-              >
-                Open video controls
-              </button>
-            </div>
-
-            <div className="button-row glass-row compact">
-              <button className="icon-button" onClick={() => step(-1)} disabled={!videoUrl} aria-label="Previous frame">
-                ◀
-              </button>
-              <button
-                className="primary icon-button play-button"
-                onClick={handlePlayPause}
-                disabled={!videoUrl}
-                aria-label="Play or pause"
-              >
-                {isPlaying ? 'Pause' : 'Play'}
-              </button>
-              <button className="icon-button" onClick={() => step(1)} disabled={!videoUrl} aria-label="Next frame">
-                ▶
-              </button>
-              <button className="icon-button" onClick={cycleRate} disabled={!videoUrl} aria-label="Cycle playback speed">
-                {playbackRate}x
-              </button>
             </div>
           </div>
         </div>
@@ -802,7 +814,7 @@ function App() {
 
                 <section>
                   <header>
-                    <h3>Playback helpers</h3>
+                    <h3>Seek tools</h3>
                     <small>Seek & speed tips</small>
                   </header>
                   <input

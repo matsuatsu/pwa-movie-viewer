@@ -271,30 +271,42 @@ video {
   flex-wrap: wrap;
 }
 
-.top-helper-row {
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.top-helper-meta {
-  display: grid;
-  gap: 0.15rem;
-  min-width: 180px;
-}
-
 .top-helper-time {
   color: #cbd5e1;
   font-variant-numeric: tabular-nums;
 }
 
-.top-helper-slider {
-  flex: 1;
-  min-width: 200px;
+.bottom-control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
-.top-helper-slider .seek-bar {
+.bottom-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.bottom-slider {
+  flex: 1;
+  min-width: 220px;
+}
+
+.bottom-slider .seek-bar {
   width: 100%;
+}
+
+.bottom-time-meta {
+  min-width: 190px;
+}
+
+.step-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .brand {
