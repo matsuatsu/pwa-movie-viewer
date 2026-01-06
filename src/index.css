@@ -264,9 +264,9 @@ video {
   left: 0;
   right: 0;
   bottom: calc(60px + var(--safe-bottom));
-  padding: 0 0.5rem;
+  padding: 0 4px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   pointer-events: none;
   z-index: 3;
@@ -315,6 +315,7 @@ video {
   border: none;
   box-shadow: none;
   backdrop-filter: none;
+  padding: 0;
 }
 
 .glass-column.sidebar button {
@@ -397,12 +398,13 @@ video {
 }
 
 .left-sidebar {
-  padding-left: 0.35rem;
+  padding-left: 0;
 }
 
 .right-sidebar {
-  align-items: stretch;
-  padding-right: 0.35rem;
+  width: auto;
+  align-items: flex-end;
+  padding-right: 0;
 }
 
 .bottom-slider-row {
@@ -549,7 +551,7 @@ video {
 }
 
 .play-button {
-  font-size: 1.05rem;
+  font-size: 0.9rem;
 }
 
 .button-row .icon-button {
