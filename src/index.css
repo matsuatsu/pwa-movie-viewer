@@ -12,7 +12,6 @@
   --viewport-height: 100dvh;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --sheet-radius: 18px;
 }
 
 html,

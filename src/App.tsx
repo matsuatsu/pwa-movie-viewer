@@ -13,7 +13,6 @@ import {
   Trash2,
   Undo2,
   Upload,
-  X,
 } from 'lucide-react';
 
 const STEP_EPS = 1 / 120;
@@ -123,7 +122,6 @@ function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [history, setHistory] = useState<DrawingAction[]>([]);
   const [redoStack, setRedoStack] = useState<DrawingAction[]>([]);
-  const [sheetSnap, setSheetSnap] = useState<'collapsed' | 'half' | 'full'>('collapsed');
   const [controlsVisible, setControlsVisible] = useState(true);
   const [videoBounds, setVideoBounds] = useState<Rect | null>(null);
 
@@ -305,7 +303,7 @@ function App() {
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
     }
-    if (persist || sheetSnap !== 'collapsed' || !isPlaying || draftLine) return;
+    if (persist || !isPlaying || draftLine) return;
     hideTimerRef.current = window.setTimeout(() => {
       setControlsVisible(false);
     }, 2600);
@@ -584,14 +582,6 @@ function App() {
     setMode((prev) => (prev === 'draw' ? 'select' : 'draw'));
   };
 
-  const toggleSheet = (nextState?: 'collapsed' | 'half' | 'full') => {
-    setSheetSnap((prev) => {
-      if (nextState) return nextState;
-      return prev === 'collapsed' ? 'half' : 'collapsed';
-    });
-    showControls(true);
-  };
-
   const clearSelection = () => {
     setSelectedId(null);
     editSessionRef.current = null;
@@ -610,7 +600,7 @@ function App() {
         hideTimerRef.current = null;
       }
     };
-  }, [isPlaying, draftLine, sheetSnap, mode, selectedId]);
+  }, [isPlaying, draftLine, mode, selectedId]);
 
   const formattedTime = (time: number) => {
     const minutes = Math.floor(time / 60)
@@ -624,13 +614,6 @@ function App() {
       .padStart(3, '0');
     return `${minutes}:${seconds}.${ms}`;
   };
-
-  const seekbarNotes = [
-    'Visible track height ~10px with 44px+ touch padding',
-    'Current/Total time kept beside bar for glanceable reading',
-    'Dragging keeps UI updated; release performs accurate seek',
-    'Bar stays centered above safe-area padding so it never hides',
-  ];
 
   const hasDuration = Boolean(duration && !Number.isNaN(duration));
   const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2';
@@ -647,7 +630,6 @@ function App() {
   );
   const sidebarActive = 'bg-emerald-500/20 text-emerald-100 border-emerald-300/45';
   const chipButton = cx(btnBase, 'h-[44px] min-w-[44px] px-2 py-1.5 text-[0.9rem]');
-  const iconButtonSize = 'h-[52px] min-w-[52px] px-3 py-2';
   const ghostButton = 'bg-transparent border-slate-600 hover:bg-slate-900/20';
   const ctaButton = cx(
     btnBase,
@@ -831,102 +813,6 @@ function App() {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-0 z-[4]">
-          <div
-            className={cx(
-              'pointer-events-auto absolute inset-0 bg-black/45 transition-opacity duration-200',
-              sheetSnap === 'collapsed'
-                ? 'pointer-events-none opacity-0 backdrop-blur-0'
-                : 'opacity-100 backdrop-blur-[2px]'
-            )}
-            onClick={() => toggleSheet('collapsed')}
-          />
-          <div
-            className={cx(
-              'pointer-events-auto absolute left-2 right-2 bottom-[calc(0.35rem+var(--safe-bottom))] flex h-[clamp(380px,68vh,760px)] max-h-[calc(var(--viewport-height)-48px-var(--safe-top)-var(--safe-bottom))] flex-col gap-3 overflow-hidden rounded-t-[var(--sheet-radius)] border border-slate-800 bg-[rgba(12,18,30,0.95)] px-3 py-1 pb-[calc(1rem+var(--safe-bottom))] shadow-[0_-10px_50px_rgba(0,0,0,0.5)] transition-transform duration-300',
-              sheetSnap === 'collapsed' && 'translate-y-[105%] pointer-events-none',
-              sheetSnap === 'half' && 'translate-y-[32%]',
-              sheetSnap === 'full' && 'translate-y-0'
-            )}
-            role="dialog"
-            aria-label="Playback controls"
-          >
-            <div className="sticky top-0 grid grid-cols-[auto_1fr_auto] items-center gap-2 border-b border-slate-800 bg-gradient-to-b from-[rgba(12,18,30,0.97)] to-[rgba(12,18,30,0.9)] py-1.5">
-              <div
-                className="flex w-full cursor-pointer justify-center py-1.5"
-                onClick={() => toggleSheet(sheetSnap === 'half' ? 'full' : sheetSnap === 'full' ? 'half' : 'half')}
-              >
-                <span className="h-[6px] w-[52px] rounded-full bg-slate-700" />
-              </div>
-              <div className="grid gap-0.5 text-slate-300">
-                <strong>Video controls</strong>
-                <small className="text-slate-400">Local only · scroll to reveal all actions</small>
-              </div>
-              <button
-                className={cx(btnBase, iconButtonSize, ghostButton)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleSheet('collapsed');
-                }}
-                aria-label="Close sheet"
-              >
-                <X aria-hidden size={18} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto overscroll-contain pb-1 [-webkit-overflow-scrolling:touch]">
-              <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] max-[640px]:grid-cols-1">
-                <section className="grid gap-2.5 rounded-[0.9rem] border border-slate-800 bg-slate-900/80 p-3">
-                  <header className="flex items-baseline justify-between gap-2">
-                    <h3 className="m-0 text-base">Video & Speed</h3>
-                    <small className="text-slate-400">Local only · 0.25x / 0.5x / 1.0x</small>
-                  </header>
-                  <button className={cx(btnBase, iconWithLabel, 'w-full')} onClick={() => fileInputRef.current?.click()}>
-                    <FolderOpen aria-hidden size={18} />
-                    Upload / Choose
-                  </button>
-                  {videoFile && <p className="break-words text-[0.9rem] text-slate-300">{videoFile.name}</p>}
-                  <button
-                    className={cx(chipButton, 'w-full justify-center text-center')}
-                    onClick={cycleRate}
-                    disabled={!videoUrl}
-                    aria-label="再生速度を順送り変更"
-                  >
-                    {playbackRate}x
-                  </button>
-                </section>
-
-                <section className="grid gap-2.5 rounded-[0.9rem] border border-slate-800 bg-slate-900/80 p-3">
-                  <header className="flex items-baseline justify-between gap-2">
-                    <h3 className="m-0 text-base">Seek tools</h3>
-                    <small className="text-slate-400">Seek & speed tips</small>
-                  </header>
-                  <input
-                    className="tw-range"
-                    type="range"
-                    min={0}
-                    max={hasDuration ? duration : 0}
-                    step={0.001}
-                    value={hasDuration ? currentTime : 0}
-                    onChange={(e) => handleSeek(Number(e.target.value))}
-                    disabled={!hasDuration}
-                  />
-                  <ul className="grid gap-1.5 pl-4 text-slate-300 marker:text-emerald-500">
-                    {seekbarNotes.map((note) => (
-                      <li key={note}>{note}</li>
-                    ))}
-                  </ul>
-                  <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-[#0b1220] px-2.5 py-1 text-slate-300">
-                    <span>{formattedTime(currentTime)}</span>
-                    <span>/</span>
-                    <span>{formattedTime(duration || 0)}</span>
-                    <span>• {playbackRate}x</span>
-                  </div>
-                </section>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <input ref={fileInputRef} type="file" accept="video/*" onChange={onFileChange} className="hidden" />
