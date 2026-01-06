@@ -1,4 +1,5 @@
 :root {
+  font-size: 14px;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -268,6 +269,32 @@ video {
   align-items: center;
   gap: 0.35rem;
   flex-wrap: wrap;
+}
+
+.top-helper-row {
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.top-helper-meta {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 180px;
+}
+
+.top-helper-time {
+  color: #cbd5e1;
+  font-variant-numeric: tabular-nums;
+}
+
+.top-helper-slider {
+  flex: 1;
+  min-width: 200px;
+}
+
+.top-helper-slider .seek-bar {
+  width: 100%;
 }
 
 .brand {

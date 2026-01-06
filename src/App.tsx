@@ -688,6 +688,27 @@ function App() {
               </button>
             </div>
           </div>
+          <div className="glass-row top-helper-row compact">
+            <div className="top-helper-meta">
+              <strong>Playback helper</strong>
+              <small className="top-helper-time">
+                {formattedTime(hasDuration ? currentTime : 0)} / {formattedTime(hasDuration ? duration : 0)} · {playbackRate}x
+              </small>
+            </div>
+            <div className="top-helper-slider">
+              <input
+                className="seek-bar"
+                type="range"
+                min={0}
+                max={hasDuration ? duration : 0}
+                step={0.001}
+                value={hasDuration ? currentTime : 0}
+                onChange={(e) => handleSeek(Number(e.target.value))}
+                disabled={!hasDuration}
+                aria-label="Seek timeline"
+              />
+            </div>
+          </div>
         </div>
 
         <div className={`ui-layer ui-bottom ${controlsVisible ? 'visible' : 'faded'}`}>
