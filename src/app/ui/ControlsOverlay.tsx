@@ -5,7 +5,6 @@ import {
   Pencil,
   Play,
   Redo2,
-  Rewind,
   StepBack,
   StepForward,
   Trash2,
@@ -20,7 +19,6 @@ type Props = {
   controlsVisible: boolean;
   mode: Mode;
   isPlaying: boolean;
-  isReversePlaying: boolean;
   playbackRate: number;
   hasVideo: boolean;
   hasDuration: boolean;
@@ -37,7 +35,6 @@ type Props = {
   onStepBackEnd: () => void;
   onCycleRate: () => void;
   onPlayPause: () => void;
-  onReverseToggle: () => void;
   onStepForwardStart: () => void;
   onStepForwardEnd: () => void;
   onSeek: (value: number) => void;
@@ -47,7 +44,6 @@ export function ControlsOverlay({
   controlsVisible,
   mode,
   isPlaying,
-  isReversePlaying,
   playbackRate,
   hasVideo,
   hasDuration,
@@ -64,7 +60,6 @@ export function ControlsOverlay({
   onStepBackEnd,
   onCycleRate,
   onPlayPause,
-  onReverseToggle,
   onStepForwardStart,
   onStepForwardEnd,
   onSeek,
@@ -168,24 +163,6 @@ export function ControlsOverlay({
               <>
                 <Play aria-hidden size={18} />
                 再生
-              </>
-            )}
-          </button>
-          <button
-            className={cx(btnBase, iconWithLabel, 'bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none')}
-            onClick={onReverseToggle}
-            disabled={!hasVideo}
-            aria-label={isReversePlaying ? '逆再生を一時停止' : '逆再生'}
-          >
-            {isReversePlaying ? (
-              <>
-                <Pause aria-hidden size={18} />
-                一時停止
-              </>
-            ) : (
-              <>
-                <Rewind aria-hidden size={18} />
-                逆再生
               </>
             )}
           </button>
