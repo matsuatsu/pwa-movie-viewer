@@ -512,7 +512,7 @@ export default function App() {
             </button>
           </div>
         )}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 flex items-center justify-center">
           {videoUrl ? (
             <video
               ref={videoRef}
@@ -522,7 +522,7 @@ export default function App() {
               disablePictureInPicture
               controlsList="nodownload noremoteplayback nofullscreen"
               aria-label="Swing video"
-              className="absolute inset-0 h-full w-full bg-black object-contain pointer-events-none"
+              className="h-[90%] w-[90%] bg-black object-contain pointer-events-none"
             />
           ) : (
             <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-slate-900/70 to-slate-900/50 p-4 text-center text-slate-300">
