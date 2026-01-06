@@ -27,6 +27,7 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
   const editSessionRef = useRef<EditSession | null>(null);
+  const stepIntervalRef = useRef<number | null>(null);
 
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -404,6 +405,24 @@ export default function App() {
     video.currentTime = target;
   };
 
+  const STEP_HOLD_INTERVAL_MS = 60;
+
+  const stopStepping = () => {
+    if (stepIntervalRef.current !== null) {
+      clearInterval(stepIntervalRef.current);
+      stepIntervalRef.current = null;
+    }
+  };
+
+  const startStepping = (direction: number) => {
+    const video = videoRef.current;
+    if (!video || !duration) return;
+    showControls();
+    stopStepping();
+    step(direction);
+    stepIntervalRef.current = window.setInterval(() => step(direction), STEP_HOLD_INTERVAL_MS);
+  };
+
   const handleSeek = (value: number) => {
     const video = videoRef.current;
     if (!video || !duration) return;
@@ -444,6 +463,10 @@ export default function App() {
       }
     };
   }, [isPlaying, draftLine, mode, selectedId]);
+
+  useEffect(() => {
+    return () => stopStepping();
+  }, []);
 
   const hasDuration = Boolean(duration && !Number.isNaN(duration));
   const hasVideo = Boolean(videoUrl);
@@ -521,10 +544,12 @@ export default function App() {
           onUndo={handleUndo}
           onRedo={handleRedo}
           onDelete={deleteSelected}
-          onStepBack={() => step(-1)}
+          onStepBackStart={() => startStepping(-1)}
+          onStepBackEnd={stopStepping}
           onCycleRate={cycleRate}
           onPlayPause={handlePlayPause}
-          onStepForward={() => step(1)}
+          onStepForwardStart={() => startStepping(1)}
+          onStepForwardEnd={stopStepping}
           onSeek={handleSeek}
         />
       </div>
