@@ -9,7 +9,6 @@ import {
   StepForward,
   Trash2,
   Undo2,
-  Upload,
 } from 'lucide-react';
 import { cx } from '../utils/classnames';
 import { formatTime } from '../utils/time';
@@ -33,7 +32,6 @@ type Props = {
   onRedo: () => void;
   onDelete: () => void;
   onStepBack: () => void;
-  onUpload: () => void;
   onCycleRate: () => void;
   onPlayPause: () => void;
   onStepForward: () => void;
@@ -57,7 +55,6 @@ export function ControlsOverlay({
   onRedo,
   onDelete,
   onStepBack,
-  onUpload,
   onCycleRate,
   onPlayPause,
   onStepForward,
@@ -125,10 +122,6 @@ export function ControlsOverlay({
         </div>
 
         <div className="pointer-events-auto flex flex-col items-end gap-2.5 self-end">
-          <button className={sidebarButton} onClick={onUpload} aria-label="Upload video">
-            <Upload aria-hidden size={18} />
-            Upload
-          </button>
           <button
             className={cx(
               chipButton,
