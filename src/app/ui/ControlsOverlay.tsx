@@ -85,11 +85,11 @@ export function ControlsOverlay({
     <>
       <div
         className={cx(
-          'pointer-events-none absolute left-0 right-0 bottom-[calc(100px+var(--safe-bottom))] z-[3] flex items-end justify-between px-1 transition-[opacity,transform] duration-200',
+          'pointer-events-none absolute left-0 top-0 bottom-0 z-[3] flex items-center justify-start px-1 transition-[opacity,transform] duration-200',
           fadeClass
         )}
       >
-        <div className="pointer-events-auto flex flex-col items-start gap-2.5 self-end">
+        <div className="pointer-events-auto flex flex-col items-start gap-2.5">
           <button
             className={cx(sidebarButton, mode === 'select' && sidebarActive)}
             onClick={onModeToggle}
@@ -121,64 +121,6 @@ export function ControlsOverlay({
             <Trash2 aria-hidden size={18} />
             Delete
           </button>
-          <button
-            className={sidebarButton}
-            onPointerDown={onStepBackStart}
-            onPointerUp={onStepBackEnd}
-            onPointerLeave={onStepBackEnd}
-            onPointerCancel={onStepBackEnd}
-            onContextMenu={preventContextMenu}
-            disabled={!hasVideo}
-            aria-label="1フレーム戻す"
-          >
-            <StepBack aria-hidden size={18} />
-            -1f
-          </button>
-        </div>
-
-        <div className="pointer-events-auto flex flex-col items-end gap-2.5 self-end">
-          <button
-            className={cx(
-              chipButton,
-              'w-[50px] min-w-[50px] bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none'
-            )}
-            onClick={onCycleRate}
-            disabled={!hasVideo}
-            aria-label="再生速度を順送り変更"
-          >
-            {playbackRate}x
-          </button>
-          <button
-            className={cx(btnBase, iconWithLabel, 'bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none')}
-            onClick={onPlayPause}
-            disabled={!hasVideo}
-            aria-label={isPlaying ? '一時停止' : '再生'}
-          >
-            {isPlaying ? (
-              <>
-                <Pause aria-hidden size={18} />
-                一時停止
-              </>
-            ) : (
-              <>
-                <Play aria-hidden size={18} />
-                再生
-              </>
-            )}
-          </button>
-          <button
-            className={sidebarButton}
-            onPointerDown={onStepForwardStart}
-            onPointerUp={onStepForwardEnd}
-            onPointerLeave={onStepForwardEnd}
-            onPointerCancel={onStepForwardEnd}
-            onContextMenu={preventContextMenu}
-            disabled={!hasVideo}
-            aria-label="1フレーム進める"
-          >
-            <StepForward aria-hidden size={18} />
-            +1f
-          </button>
         </div>
       </div>
 
@@ -192,12 +134,70 @@ export function ControlsOverlay({
           <div
             className={cx(
               btnBase,
-              'min-w-[220px] justify-center bg-slate-900/35 p-1 text-sm font-semibold shadow-none hover:bg-slate-900/50 hover:shadow-none'
+              'justify-center bg-slate-900/35 p-1 text-sm font-semibold shadow-none hover:bg-slate-900/50 hover:shadow-none'
             )}
           >
             <small className="tabular-nums text-slate-200">
               {formatTime(hasDuration ? currentTime : 0)} / {formatTime(hasDuration ? duration : 0)}
             </small>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            <button
+              className={chipButton}
+              onPointerDown={onStepBackStart}
+              onPointerUp={onStepBackEnd}
+              onPointerLeave={onStepBackEnd}
+              onPointerCancel={onStepBackEnd}
+              onContextMenu={preventContextMenu}
+              disabled={!hasVideo}
+              aria-label="1フレーム戻す"
+            >
+              <StepBack aria-hidden size={18} />
+              -1f
+            </button>
+            <button
+              className={cx(
+                chipButton,
+                'w-[60px] min-w-[60px] bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none'
+              )}
+              onClick={onCycleRate}
+              disabled={!hasVideo}
+              aria-label="再生速度を順送り変更"
+            >
+              {playbackRate}x
+            </button>
+            <button
+              className={cx(btnBase, iconWithLabel, 'bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none')}
+              onClick={onPlayPause}
+              disabled={!hasVideo}
+              aria-label={isPlaying ? '一時停止' : '再生'}
+            >
+              {isPlaying ? (
+                <>
+                  <Pause aria-hidden size={18} />
+                  一時停止
+                </>
+              ) : (
+                <>
+                  <Play aria-hidden size={18} />
+                  再生
+                </>
+              )}
+            </button>
+            <button
+              className={chipButton}
+              onPointerDown={onStepForwardStart}
+              onPointerUp={onStepForwardEnd}
+              onPointerLeave={onStepForwardEnd}
+              onPointerCancel={onStepForwardEnd}
+              onContextMenu={preventContextMenu}
+              disabled={!hasVideo}
+              aria-label="1フレーム進める"
+            >
+              <StepForward aria-hidden size={18} />
+              +1f
+            </button>
           </div>
 
           <div
