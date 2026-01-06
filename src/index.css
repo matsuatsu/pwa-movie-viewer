@@ -262,9 +262,9 @@ video {
 .sidebar-layer {
   position: absolute;
   inset: 0;
-  padding: 1rem;
+  padding: 0.5rem 0.5rem calc(1rem + var(--safe-bottom));
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   pointer-events: none;
   z-index: 3;
@@ -363,15 +363,18 @@ video {
   width: min(200px, 22vw);
 }
 
+.left-sidebar,
+.right-sidebar {
+  align-self: flex-end;
+}
+
 .left-sidebar {
-  align-self: center;
-  padding-left: calc(0.25rem + var(--safe-top));
+  padding-left: 0.35rem;
 }
 
 .right-sidebar {
-  align-self: center;
   align-items: stretch;
-  padding-right: calc(0.25rem + var(--safe-top));
+  padding-right: 0.35rem;
 }
 
 .bottom-slider-row {
@@ -666,6 +669,16 @@ video {
 
 .speed-group {
   gap: 0.4rem;
+}
+
+.speed-button {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+.right-sidebar .speed-button {
+  min-width: 120px;
 }
 
 .seek {
