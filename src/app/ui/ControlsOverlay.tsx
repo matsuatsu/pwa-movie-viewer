@@ -31,10 +31,12 @@ type Props = {
   onUndo: () => void;
   onRedo: () => void;
   onDelete: () => void;
-  onStepBack: () => void;
+  onStepBackStart: () => void;
+  onStepBackEnd: () => void;
   onCycleRate: () => void;
   onPlayPause: () => void;
-  onStepForward: () => void;
+  onStepForwardStart: () => void;
+  onStepForwardEnd: () => void;
   onSeek: (value: number) => void;
 };
 
@@ -54,10 +56,12 @@ export function ControlsOverlay({
   onUndo,
   onRedo,
   onDelete,
-  onStepBack,
+  onStepBackStart,
+  onStepBackEnd,
   onCycleRate,
   onPlayPause,
-  onStepForward,
+  onStepForwardStart,
+  onStepForwardEnd,
   onSeek,
 }: Props) {
   const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2';
@@ -115,7 +119,15 @@ export function ControlsOverlay({
             <Trash2 aria-hidden size={18} />
             Delete
           </button>
-          <button className={sidebarButton} onClick={onStepBack} disabled={!hasVideo} aria-label="1フレーム戻す">
+          <button
+            className={sidebarButton}
+            onPointerDown={onStepBackStart}
+            onPointerUp={onStepBackEnd}
+            onPointerLeave={onStepBackEnd}
+            onPointerCancel={onStepBackEnd}
+            disabled={!hasVideo}
+            aria-label="1フレーム戻す"
+          >
             <StepBack aria-hidden size={18} />
             -1f
           </button>
@@ -151,7 +163,15 @@ export function ControlsOverlay({
               </>
             )}
           </button>
-          <button className={sidebarButton} onClick={onStepForward} disabled={!hasVideo} aria-label="1フレーム進める">
+          <button
+            className={sidebarButton}
+            onPointerDown={onStepForwardStart}
+            onPointerUp={onStepForwardEnd}
+            onPointerLeave={onStepForwardEnd}
+            onPointerCancel={onStepForwardEnd}
+            disabled={!hasVideo}
+            aria-label="1フレーム進める"
+          >
             <StepForward aria-hidden size={18} />
             +1f
           </button>
