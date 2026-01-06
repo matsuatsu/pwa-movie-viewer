@@ -654,7 +654,7 @@ function App() {
             />
           ) : (
             <div className="empty-state">
-              <button className="cta" onClick={() => fileInputRef.current?.click()}>
+              <button className="cta icon-with-label" onClick={() => fileInputRef.current?.click()}>
                 <FolderOpen aria-hidden size={20} />
                 Choose video
               </button>
@@ -672,7 +672,7 @@ function App() {
         <div className={`sidebar-layer ${controlsVisible ? 'visible' : 'faded'}`}>
           <div className="glass-column sidebar left-sidebar">
             <button
-              className={`icon-button chip-button ${mode === 'select' ? 'active' : ''}`}
+              className={`icon-button chip-button icon-with-label ${mode === 'select' ? 'active' : ''}`}
               onClick={handleModeToggle}
               disabled={!videoUrl}
               aria-label="Toggle draw or edit"
@@ -690,16 +690,26 @@ function App() {
                 </>
               )}
             </button>
-            <button className="icon-button chip-button" onClick={handleUndo} disabled={!history.length} aria-label="Undo">
+            <button
+              className="icon-button chip-button icon-with-label"
+              onClick={handleUndo}
+              disabled={!history.length}
+              aria-label="Undo"
+            >
               <Undo2 aria-hidden size={18} />
               Undo
             </button>
-            <button className="icon-button chip-button" onClick={handleRedo} disabled={!redoStack.length} aria-label="Redo">
+            <button
+              className="icon-button chip-button icon-with-label"
+              onClick={handleRedo}
+              disabled={!redoStack.length}
+              aria-label="Redo"
+            >
               <Redo2 aria-hidden size={18} />
               Redo
             </button>
             <button
-              className="icon-button chip-button"
+              className="icon-button chip-button icon-with-label"
               onClick={deleteSelected}
               disabled={!selectedId}
               aria-label="Delete selected"
@@ -708,7 +718,7 @@ function App() {
               Delete
             </button>
             <button
-              className="icon-button chip-button"
+              className="icon-button chip-button icon-with-label"
               onClick={() => step(-1)}
               disabled={!videoUrl}
               aria-label="1フレーム戻す"
@@ -720,7 +730,7 @@ function App() {
 
           <div className="glass-column sidebar right-sidebar">
             <button
-              className="icon-button chip-button"
+              className="icon-button chip-button icon-with-label"
               onClick={() => fileInputRef.current?.click()}
               aria-label="Upload video"
             >
@@ -733,7 +743,7 @@ function App() {
               </button>
             </div>
             <button
-              className="play-button"
+              className="play-button icon-with-label"
               onClick={handlePlayPause}
               disabled={!videoUrl}
               aria-label={isPlaying ? '一時停止' : '再生'}
@@ -751,7 +761,7 @@ function App() {
               )}
             </button>
             <button
-              className="icon-button chip-button"
+              className="icon-button chip-button icon-with-label"
               onClick={() => step(1)}
               disabled={!videoUrl}
               aria-label="1フレーム進める"
@@ -800,7 +810,7 @@ function App() {
                 <small>Local only · scroll to reveal all actions</small>
               </div>
               <button
-                className="icon-button ghost"
+                className="icon-button ghost icon-with-label"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleSheet('collapsed');
@@ -818,7 +828,7 @@ function App() {
                     <h3>Video & Speed</h3>
                     <small>Local only · 0.25x / 0.5x / 1.0x</small>
                   </header>
-                  <button className="wide" onClick={() => fileInputRef.current?.click()}>
+                  <button className="wide icon-with-label" onClick={() => fileInputRef.current?.click()}>
                     <FolderOpen aria-hidden size={18} />
                     Upload / Choose
                   </button>

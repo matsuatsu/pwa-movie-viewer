@@ -57,6 +57,15 @@ button {
   gap: 0.45rem;
 }
 
+.icon-with-label {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
 button .lucide {
   width: 20px;
   height: 20px;
@@ -509,7 +518,6 @@ video {
 }
 
 .play-button {
-  min-width: 148px;
   font-size: 1.05rem;
 }
 
