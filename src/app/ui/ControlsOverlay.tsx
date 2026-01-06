@@ -184,19 +184,30 @@ export function ControlsOverlay({
 
       <div
         className={cx(
-          'pointer-events-none absolute left-0 right-0 bottom-0 z-[3] flex flex-col gap-2.5 p-[0.85rem] pb-[calc(0.85rem+var(--safe-bottom))] transition-[opacity,transform] duration-200',
+          'pointer-events-none absolute left-0 right-0 bottom-0 z-[3] flex justify-center p-[0.85rem] pb-[calc(0.85rem+var(--safe-bottom))] transition-[opacity,transform] duration-200',
           fadeClass
         )}
       >
-        <div className="pointer-events-auto flex flex-wrap items-center gap-3 rounded-2xl border border-slate-600/60 bg-slate-900/35 px-2.5 py-2 shadow-none backdrop-blur-[12px]">
-          <div className="min-w-[190px]">
-            <small className="tabular-nums text-slate-300">
+        <div className="pointer-events-auto flex w-full max-w-[780px] flex-col items-center gap-2.5">
+          <div
+            className={cx(
+              btnBase,
+              'min-w-[220px] justify-center bg-slate-900/35 p-1 text-sm font-semibold shadow-none hover:bg-slate-900/50 hover:shadow-none'
+            )}
+          >
+            <small className="tabular-nums text-slate-200">
               {formatTime(hasDuration ? currentTime : 0)} / {formatTime(hasDuration ? duration : 0)}
             </small>
           </div>
-          <div className="min-w-[220px] flex-1">
+
+          <div
+            className={cx(
+              btnBase,
+              'w-full justify-center bg-slate-900/35 p-1 shadow-none hover:bg-slate-900/50 hover:shadow-none'
+            )}
+          >
             <input
-              className="tw-range"
+              className="tw-range w-full"
               type="range"
               min={0}
               max={hasDuration ? duration : 0}
