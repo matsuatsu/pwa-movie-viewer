@@ -186,6 +186,8 @@ export default function App() {
 
   const handlePointerDown = (event: React.PointerEvent) => {
     if (!videoUrl || event.button === 2) return;
+    const pointerTarget = event.target as HTMLElement | null;
+    if (pointerTarget?.closest('button, input, select, textarea')) return;
     const point = toNormalizedPoint(event);
     showControls(true);
 
