@@ -31,6 +31,8 @@ export default function App() {
   const playbackRateRef = useRef(1);
   const reverseAnimationRef = useRef<number | null>(null);
   const reverseLastTimestampRef = useRef<number | null>(null);
+  const reverseFrameCallbackRef = useRef<number | null>(null);
+  const reverseLastMediaTimeRef = useRef<number | null>(null);
 
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -374,11 +376,19 @@ export default function App() {
   }, [deleteSelected, selectedId]);
 
   const stopReversePlayback = useCallback(() => {
+    const video = videoRef.current as (HTMLVideoElement & {
+      cancelVideoFrameCallback?: (handle: number) => void;
+    }) | null;
+    if (video && reverseFrameCallbackRef.current !== null) {
+      video.cancelVideoFrameCallback?.(reverseFrameCallbackRef.current);
+      reverseFrameCallbackRef.current = null;
+    }
     if (reverseAnimationRef.current !== null) {
       cancelAnimationFrame(reverseAnimationRef.current);
       reverseAnimationRef.current = null;
     }
     reverseLastTimestampRef.current = null;
+    reverseLastMediaTimeRef.current = null;
     setIsReversePlaying(false);
   }, []);
 
@@ -391,6 +401,13 @@ export default function App() {
     setIsPlaying(false);
     stopReversePlayback();
     setIsReversePlaying(true);
+    const htmlVideoWithFrames = video as HTMLVideoElement & {
+      requestVideoFrameCallback?: (
+        callback: (now: number, metadata: VideoFrameCallbackMetadata) => void
+      ) => number;
+      cancelVideoFrameCallback?: (handle: number) => void;
+    };
+
     const reverseStep = (timestamp: number) => {
       if (!video) return;
       if (reverseLastTimestampRef.current === null) {
@@ -408,6 +425,29 @@ export default function App() {
       }
       reverseAnimationRef.current = requestAnimationFrame(reverseStep);
     };
+
+    const reverseFrameStep = (_now: number, metadata: VideoFrameCallbackMetadata) => {
+      if (!video) return;
+      const lastMediaTime = reverseLastMediaTimeRef.current;
+      reverseLastMediaTimeRef.current = metadata.mediaTime;
+      setCurrentTime(metadata.mediaTime);
+
+      const deltaSeconds = lastMediaTime === null ? 1 / 60 : Math.max(1 / 120, Math.abs(lastMediaTime - metadata.mediaTime));
+      const nextTime = Math.max(0, metadata.mediaTime - deltaSeconds * playbackRateRef.current);
+      if (nextTime <= 0) {
+        video.currentTime = 0;
+        stopReversePlayback();
+        return;
+      }
+      video.currentTime = nextTime;
+      reverseFrameCallbackRef.current = htmlVideoWithFrames.requestVideoFrameCallback?.(reverseFrameStep) ?? null;
+    };
+
+    if (htmlVideoWithFrames.requestVideoFrameCallback) {
+      reverseFrameCallbackRef.current = htmlVideoWithFrames.requestVideoFrameCallback(reverseFrameStep);
+      return;
+    }
+
     reverseAnimationRef.current = requestAnimationFrame(reverseStep);
   };
 
