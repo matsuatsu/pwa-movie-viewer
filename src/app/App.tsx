@@ -384,7 +384,7 @@ export default function App() {
   };
 
   const cycleRate = () => {
-    const options = [0.25, 0.5, 1];
+    const options = [0.1, 0.25, 1];
     const currentIndex = options.indexOf(playbackRate);
     const next = options[(currentIndex + 1) % options.length];
     handleRateChange(next);
