@@ -394,7 +394,7 @@ video {
 
 .left-sidebar,
 .right-sidebar {
-  align-self: center;
+  align-self: flex-end;
 }
 
 .left-sidebar {
