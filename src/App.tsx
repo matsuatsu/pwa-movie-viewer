@@ -3,6 +3,21 @@ import './App.css';
 import './index.css';
 import { DrawingAction, LineShape, Point } from './types';
 import { loadDrawing, saveDrawing } from './storage';
+import {
+  FolderOpen,
+  MousePointer2,
+  Pause,
+  Pencil,
+  Play,
+  Redo2,
+  Repeat,
+  StepBack,
+  StepForward,
+  Trash2,
+  Undo2,
+  Upload,
+  X,
+} from 'lucide-react';
 
 const STEP_EPS = 1 / 120;
 const HISTORY_LIMIT = 50;
@@ -641,7 +656,8 @@ function App() {
           ) : (
             <div className="empty-state">
               <button className="cta" onClick={() => fileInputRef.current?.click()}>
-                📂 Choose video
+                <FolderOpen aria-hidden size={20} />
+                Choose video
               </button>
               <p className="hint">Local file stays on device for privacy.</p>
             </div>
@@ -663,13 +679,25 @@ function App() {
                 aria-label="Toggle draw or edit"
                 title="Toggle draw or edit"
               >
-                {mode === 'draw' ? '✏️ Draw' : '🎯 Edit'}
+                {mode === 'draw' ? (
+                  <>
+                    <Pencil aria-hidden size={18} />
+                    Draw
+                  </>
+                ) : (
+                  <>
+                    <MousePointer2 aria-hidden size={18} />
+                    Edit
+                  </>
+                )}
               </button>
               <button className="icon-button chip-button" onClick={handleUndo} disabled={!history.length} aria-label="Undo">
-                ↩️ Undo
+                <Undo2 aria-hidden size={18} />
+                Undo
               </button>
               <button className="icon-button chip-button" onClick={handleRedo} disabled={!redoStack.length} aria-label="Redo">
-                ↪️ Redo
+                <Redo2 aria-hidden size={18} />
+                Redo
               </button>
               <button
                 className="icon-button chip-button"
@@ -677,14 +705,16 @@ function App() {
                 disabled={!selectedId}
                 aria-label="Delete selected"
               >
-                🗑️ Delete
+                <Trash2 aria-hidden size={18} />
+                Delete
               </button>
               <button
                 className="icon-button chip-button"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Upload video"
               >
-                📂 Upload
+                <Upload aria-hidden size={18} />
+                Upload
               </button>
             </div>
           </div>
@@ -698,7 +728,17 @@ function App() {
               disabled={!videoUrl}
               aria-label={isPlaying ? '一時停止' : '再生'}
             >
-              {isPlaying ? '⏸️ 一時停止' : '▶️ 再生'}
+              {isPlaying ? (
+                <>
+                  <Pause aria-hidden size={20} />
+                  一時停止
+                </>
+              ) : (
+                <>
+                  <Play aria-hidden size={20} />
+                  再生
+                </>
+              )}
             </button>
             <div className="step-group">
               <button
@@ -707,7 +747,8 @@ function App() {
                 disabled={!videoUrl}
                 aria-label="1フレーム戻す"
               >
-                ⏪ -1f
+                <StepBack aria-hidden size={18} />
+                -1f
               </button>
               <button
                 className="icon-button chip-button"
@@ -715,7 +756,8 @@ function App() {
                 disabled={!videoUrl}
                 aria-label="1フレーム進める"
               >
-                ⏩ +1f
+                <StepForward aria-hidden size={18} />
+                +1f
               </button>
             </div>
             <div className="pill speed-group compact">
@@ -731,7 +773,7 @@ function App() {
                 </button>
               ))}
               <button className="ghost" onClick={cycleRate} disabled={!videoUrl} aria-label="再生速度を順送り変更">
-                🔁
+                <Repeat aria-hidden size={18} />
               </button>
             </div>
           </div>
@@ -780,7 +822,7 @@ function App() {
                 }}
                 aria-label="Close sheet"
               >
-                ✕
+                <X aria-hidden size={18} />
               </button>
             </div>
 
@@ -792,7 +834,8 @@ function App() {
                     <small>Local only · 0.25x / 0.5x / 1.0x</small>
                   </header>
                   <button className="wide" onClick={() => fileInputRef.current?.click()}>
-                    📂 Upload / Choose
+                    <FolderOpen aria-hidden size={18} />
+                    Upload / Choose
                   </button>
                   {videoFile && <p className="meta">{videoFile.name}</p>}
                   <div className="pill speed-group">
@@ -807,6 +850,7 @@ function App() {
                       </button>
                     ))}
                     <button className="ghost" onClick={cycleRate} disabled={!videoUrl}>
+                      <Repeat aria-hidden size={18} />
                       Cycle
                     </button>
                   </div>
