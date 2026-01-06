@@ -51,6 +51,15 @@ button {
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, opacity 0.2s ease;
   min-height: 44px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+button .lucide {
+  width: 20px;
+  height: 20px;
 }
 
 button:hover:not(:disabled) {
@@ -65,12 +74,12 @@ button:disabled {
 }
 
 .icon-button {
-  width: 52px;
+  min-width: 52px;
   height: 52px;
-  padding: 0.35rem;
-  display: grid;
-  place-items: center;
-  font-size: 1.25rem;
+  padding: 0.35rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .icon-button.wide {
