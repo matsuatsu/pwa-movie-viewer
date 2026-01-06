@@ -512,7 +512,7 @@ export default function App() {
             </button>
           </div>
         )}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-start justify-center pt-4">
           {videoUrl ? (
             <video
               ref={videoRef}
