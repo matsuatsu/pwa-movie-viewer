@@ -262,9 +262,9 @@ video {
 .sidebar-layer {
   position: absolute;
   inset: 0;
-  padding: 0.5rem 0.5rem calc(1rem + var(--safe-bottom));
+  padding: 8vh 0.5rem calc(1rem + var(--safe-bottom));
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   pointer-events: none;
   z-index: 3;
@@ -360,12 +360,12 @@ video {
 }
 
 .sidebar {
-  width: min(200px, 22vw);
+  width: min(180px, 20vw);
 }
 
 .left-sidebar,
 .right-sidebar {
-  align-self: flex-end;
+  align-self: center;
 }
 
 .left-sidebar {
@@ -672,13 +672,8 @@ video {
 }
 
 .speed-button {
-  width: 100%;
   justify-content: center;
   text-align: center;
-}
-
-.right-sidebar .speed-button {
-  min-width: 120px;
 }
 
 .seek {
