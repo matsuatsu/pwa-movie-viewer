@@ -188,7 +188,7 @@ export function ControlsOverlay({
           fadeClass
         )}
       >
-        <div className="pointer-events-auto flex flex-wrap items-center gap-3 rounded-2xl border border-slate-800 bg-[linear-gradient(135deg,rgba(15,23,42,0.9),rgba(15,23,42,0.72))] px-2.5 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-[12px]">
+        <div className="pointer-events-auto flex flex-wrap items-center gap-3 rounded-2xl border border-slate-600/60 bg-slate-900/35 px-2.5 py-2 shadow-none backdrop-blur-[12px]">
           <div className="min-w-[190px]">
             <small className="tabular-nums text-slate-300">
               {formatTime(hasDuration ? currentTime : 0)} / {formatTime(hasDuration ? duration : 0)}
