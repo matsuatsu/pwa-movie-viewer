@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import './App.css';
-import './index.css';
 import { DrawingAction, LineShape, Point } from './types';
 import { loadDrawing, saveDrawing } from './storage';
 import {
@@ -23,6 +21,10 @@ const HISTORY_LIMIT = 50;
 const HANDLE_VISUAL_RADIUS = 7;
 const HANDLE_HIT_RADIUS = 32;
 const LINE_HIT_THRESHOLD = 18;
+
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(' ');
+}
 
 function distanceToSegment(p: Point, a: Point, b: Point, width: number, height: number): number {
   const px = p.x * width;
@@ -627,21 +629,42 @@ function App() {
     'Visible track height ~10px with 44px+ touch padding',
     'Current/Total time kept beside bar for glanceable reading',
     'Dragging keeps UI updated; release performs accurate seek',
-    'Bar stays centered above safe-area padding so it never hides'
+    'Bar stays centered above safe-area padding so it never hides',
   ];
 
   const hasDuration = Boolean(duration && !Number.isNaN(duration));
+  const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2';
+
+  const btnBase =
+    'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[0.9rem] border border-slate-700 bg-slate-800 px-3 py-2.5 font-semibold text-slate-200 ' +
+    'transition-[transform,box-shadow,background,opacity] duration-150 hover:-translate-y-px hover:bg-slate-900 hover:shadow-[0_8px_20px_rgba(0,0,0,0.3)] ' +
+    'disabled:cursor-not-allowed disabled:opacity-45';
+  const iconWithLabel = 'flex-col gap-1.5 text-center leading-tight';
+  const sidebarButton = cx(
+    btnBase,
+    iconWithLabel,
+    'h-[44px] w-[50px] min-w-[50px] px-2 py-1.5 text-[0.9rem] bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none'
+  );
+  const sidebarActive = 'bg-emerald-500/20 text-emerald-100 border-emerald-300/45';
+  const chipButton = cx(btnBase, 'h-[44px] min-w-[44px] px-2 py-1.5 text-[0.9rem]');
+  const iconButtonSize = 'h-[52px] min-w-[52px] px-3 py-2';
+  const ghostButton = 'bg-transparent border-slate-600 hover:bg-slate-900/20';
+  const ctaButton = cx(
+    btnBase,
+    iconWithLabel,
+    'border-0 bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 shadow-[0_18px_45px_rgba(0,0,0,0.35)] px-4 py-3 text-[1.05rem] rounded-[0.95rem]'
+  );
 
   return (
-    <div className="app-screen">
+    <div className="relative h-[var(--viewport-height,100dvh)] w-screen overflow-hidden text-slate-200">
       <div
-        className="screen"
+        className="relative h-full w-full touch-manipulation bg-[#0b1220]"
         ref={containerRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <div className="video-layer">
+        <div className="absolute inset-0">
           {videoUrl ? (
             <video
               ref={videoRef}
@@ -651,28 +674,33 @@ function App() {
               disablePictureInPicture
               controlsList="nodownload noremoteplayback nofullscreen"
               aria-label="Swing video"
+              className="absolute inset-0 h-full w-full bg-black object-contain pointer-events-none"
             />
           ) : (
-            <div className="empty-state">
-              <button className="cta icon-with-label" onClick={() => fileInputRef.current?.click()}>
+            <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-slate-900/70 to-slate-900/50 p-4 text-center text-slate-300">
+              <button className={ctaButton} onClick={() => fileInputRef.current?.click()}>
                 <FolderOpen aria-hidden size={20} />
                 Choose video
               </button>
-              <p className="hint">Local file stays on device for privacy.</p>
             </div>
           )}
         </div>
 
         <canvas
-          className="canvas-layer"
+          className="absolute inset-0 h-full w-full touch-none"
           ref={canvasRef}
           style={{ pointerEvents: videoUrl ? 'auto' : 'none' }}
         />
 
-        <div className={`sidebar-layer ${controlsVisible ? 'visible' : 'faded'}`}>
-          <div className="glass-column sidebar left-sidebar">
+        <div
+          className={cx(
+            'pointer-events-none absolute left-0 right-0 bottom-[calc(60px+var(--safe-bottom))] z-[3] flex items-end justify-between px-1 transition-[opacity,transform] duration-200',
+            fadeClass
+          )}
+        >
+          <div className="pointer-events-auto flex flex-col items-start gap-2.5 self-end">
             <button
-              className={`icon-button chip-button icon-with-label ${mode === 'select' ? 'active' : ''}`}
+              className={cx(sidebarButton, mode === 'select' && sidebarActive)}
               onClick={handleModeToggle}
               disabled={!videoUrl}
               aria-label="Toggle draw or edit"
@@ -691,7 +719,7 @@ function App() {
               )}
             </button>
             <button
-              className="icon-button chip-button icon-with-label"
+              className={sidebarButton}
               onClick={handleUndo}
               disabled={!history.length}
               aria-label="Undo"
@@ -700,7 +728,7 @@ function App() {
               Undo
             </button>
             <button
-              className="icon-button chip-button icon-with-label"
+              className={sidebarButton}
               onClick={handleRedo}
               disabled={!redoStack.length}
               aria-label="Redo"
@@ -709,7 +737,7 @@ function App() {
               Redo
             </button>
             <button
-              className="icon-button chip-button icon-with-label"
+              className={sidebarButton}
               onClick={deleteSelected}
               disabled={!selectedId}
               aria-label="Delete selected"
@@ -718,7 +746,7 @@ function App() {
               Delete
             </button>
             <button
-              className="icon-button chip-button icon-with-label"
+              className={sidebarButton}
               onClick={() => step(-1)}
               disabled={!videoUrl}
               aria-label="1フレーム戻す"
@@ -728,9 +756,9 @@ function App() {
             </button>
           </div>
 
-          <div className="glass-column sidebar right-sidebar">
+          <div className="pointer-events-auto flex flex-col items-end gap-2.5 self-end">
             <button
-              className="icon-button chip-button icon-with-label"
+              className={sidebarButton}
               onClick={() => fileInputRef.current?.click()}
               aria-label="Upload video"
             >
@@ -738,7 +766,7 @@ function App() {
               Upload
             </button>
             <button
-              className="icon-button chip-button speed-button"
+              className={cx(chipButton, 'w-[50px] min-w-[50px] bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none')}
               onClick={cycleRate}
               disabled={!videoUrl}
               aria-label="再生速度を順送り変更"
@@ -746,7 +774,7 @@ function App() {
               {playbackRate}x
             </button>
             <button
-              className="play-button icon-with-label"
+              className={cx(btnBase, iconWithLabel, 'text-[0.9rem] bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none')}
               onClick={handlePlayPause}
               disabled={!videoUrl}
               aria-label={isPlaying ? '一時停止' : '再生'}
@@ -764,7 +792,7 @@ function App() {
               )}
             </button>
             <button
-              className="icon-button chip-button icon-with-label"
+              className={sidebarButton}
               onClick={() => step(1)}
               disabled={!videoUrl}
               aria-label="1フレーム進める"
@@ -775,16 +803,21 @@ function App() {
           </div>
         </div>
 
-        <div className={`ui-layer ui-bottom ${controlsVisible ? 'visible' : 'faded'}`}>
-          <div className="glass-row bottom-slider-row compact">
-            <div className="bottom-time-meta">
-              <small className="top-helper-time">
+        <div
+          className={cx(
+            'pointer-events-none absolute left-0 right-0 bottom-0 z-[3] flex flex-col gap-2.5 p-[0.85rem] pb-[calc(0.85rem+var(--safe-bottom))] transition-[opacity,transform] duration-200',
+            fadeClass
+          )}
+        >
+          <div className="pointer-events-auto flex flex-wrap items-center gap-3 rounded-2xl border border-slate-800 bg-[linear-gradient(135deg,rgba(15,23,42,0.9),rgba(15,23,42,0.72))] px-2.5 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-[12px]">
+            <div className="min-w-[190px]">
+              <small className="tabular-nums text-slate-300">
                 {formattedTime(hasDuration ? currentTime : 0)} / {formattedTime(hasDuration ? duration : 0)}
               </small>
             </div>
-            <div className="bottom-slider">
+            <div className="min-w-[220px] flex-1">
               <input
-                className="seek-bar"
+                className="tw-range"
                 type="range"
                 min={0}
                 max={hasDuration ? duration : 0}
@@ -798,22 +831,37 @@ function App() {
           </div>
         </div>
 
-        <div className={`bottom-sheet ${sheetSnap}`}>
-          <div className={`sheet-backdrop ${sheetSnap === 'collapsed' ? 'hidden' : ''}`} onClick={() => toggleSheet('collapsed')} />
-          <div className="sheet-surface" role="dialog" aria-label="Playback controls">
-            <div className="sheet-header">
+        <div className="pointer-events-none absolute inset-0 z-[4]">
+          <div
+            className={cx(
+              'pointer-events-auto absolute inset-0 bg-black/45 opacity-100 backdrop-blur-[2px] transition-opacity duration-200',
+              sheetSnap === 'collapsed' && 'pointer-events-none opacity-0'
+            )}
+            onClick={() => toggleSheet('collapsed')}
+          />
+          <div
+            className={cx(
+              'pointer-events-auto absolute left-2 right-2 bottom-[calc(0.35rem+var(--safe-bottom))] flex h-[clamp(380px,68vh,760px)] max-h-[calc(var(--viewport-height)-48px-var(--safe-top)-var(--safe-bottom))] flex-col gap-3 overflow-hidden rounded-t-[var(--sheet-radius)] border border-slate-800 bg-[rgba(12,18,30,0.95)] px-3 py-1 pb-[calc(1rem+var(--safe-bottom))] shadow-[0_-10px_50px_rgba(0,0,0,0.5)] transition-transform duration-300',
+              sheetSnap === 'collapsed' && 'translate-y-[105%] pointer-events-none',
+              sheetSnap === 'half' && 'translate-y-[32%]',
+              sheetSnap === 'full' && 'translate-y-0'
+            )}
+            role="dialog"
+            aria-label="Playback controls"
+          >
+            <div className="sticky top-0 grid grid-cols-[auto_1fr_auto] items-center gap-2 border-b border-slate-800 bg-gradient-to-b from-[rgba(12,18,30,0.97)] to-[rgba(12,18,30,0.9)] py-1.5">
               <div
-                className="sheet-handle"
+                className="flex w-full cursor-pointer justify-center py-1.5"
                 onClick={() => toggleSheet(sheetSnap === 'half' ? 'full' : sheetSnap === 'full' ? 'half' : 'half')}
               >
-                <span className="grip" />
+                <span className="h-[6px] w-[52px] rounded-full bg-slate-700" />
               </div>
-              <div className="sheet-title">
+              <div className="grid gap-0.5 text-slate-300">
                 <strong>Video controls</strong>
-                <small>Local only · scroll to reveal all actions</small>
+                <small className="text-slate-400">Local only · scroll to reveal all actions</small>
               </div>
               <button
-                className="icon-button ghost icon-with-label"
+                className={cx(btnBase, iconButtonSize, ghostButton)}
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleSheet('collapsed');
@@ -824,20 +872,20 @@ function App() {
               </button>
             </div>
 
-            <div className="sheet-body">
-              <div className="sheet-grid">
-                <section>
-                  <header>
-                    <h3>Video & Speed</h3>
-                    <small>Local only · 0.25x / 0.5x / 1.0x</small>
+            <div className="flex-1 overflow-y-auto overscroll-contain pb-1 [-webkit-overflow-scrolling:touch]">
+              <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] max-[640px]:grid-cols-1">
+                <section className="grid gap-2.5 rounded-[0.9rem] border border-slate-800 bg-slate-900/80 p-3">
+                  <header className="flex items-baseline justify-between gap-2">
+                    <h3 className="m-0 text-base">Video & Speed</h3>
+                    <small className="text-slate-400">Local only · 0.25x / 0.5x / 1.0x</small>
                   </header>
-                  <button className="wide icon-with-label" onClick={() => fileInputRef.current?.click()}>
+                  <button className={cx(btnBase, iconWithLabel, 'w-full')} onClick={() => fileInputRef.current?.click()}>
                     <FolderOpen aria-hidden size={18} />
                     Upload / Choose
                   </button>
-                  {videoFile && <p className="meta">{videoFile.name}</p>}
+                  {videoFile && <p className="break-words text-[0.9rem] text-slate-300">{videoFile.name}</p>}
                   <button
-                    className="icon-button chip-button speed-button wide"
+                    className={cx(chipButton, 'w-full justify-center text-center')}
                     onClick={cycleRate}
                     disabled={!videoUrl}
                     aria-label="再生速度を順送り変更"
@@ -846,13 +894,13 @@ function App() {
                   </button>
                 </section>
 
-                <section>
-                  <header>
-                    <h3>Seek tools</h3>
-                    <small>Seek & speed tips</small>
+                <section className="grid gap-2.5 rounded-[0.9rem] border border-slate-800 bg-slate-900/80 p-3">
+                  <header className="flex items-baseline justify-between gap-2">
+                    <h3 className="m-0 text-base">Seek tools</h3>
+                    <small className="text-slate-400">Seek & speed tips</small>
                   </header>
                   <input
-                    className="seek"
+                    className="tw-range"
                     type="range"
                     min={0}
                     max={hasDuration ? duration : 0}
@@ -861,12 +909,12 @@ function App() {
                     onChange={(e) => handleSeek(Number(e.target.value))}
                     disabled={!hasDuration}
                   />
-                  <ul className="bullet-list">
+                  <ul className="grid gap-1.5 pl-4 text-slate-300 marker:text-emerald-500">
                     {seekbarNotes.map((note) => (
                       <li key={note}>{note}</li>
                     ))}
                   </ul>
-                  <div className="pill tight inline-metrics">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-[#0b1220] px-2.5 py-1 text-slate-300">
                     <span>{formattedTime(currentTime)}</span>
                     <span>/</span>
                     <span>{formattedTime(duration || 0)}</span>
@@ -879,7 +927,7 @@ function App() {
         </div>
       </div>
 
-      <input ref={fileInputRef} type="file" accept="video/*" onChange={onFileChange} className="file-input" />
+      <input ref={fileInputRef} type="file" accept="video/*" onChange={onFileChange} className="hidden" />
     </div>
   );
 }
