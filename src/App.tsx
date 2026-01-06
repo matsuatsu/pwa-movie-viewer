@@ -737,11 +737,14 @@ function App() {
               <Upload aria-hidden size={18} />
               Upload
             </button>
-            <div className="pill speed-group compact">
-              <button onClick={cycleRate} disabled={!videoUrl} aria-label="再生速度を順送り変更">
-                {playbackRate}x
-              </button>
-            </div>
+            <button
+              className="icon-button chip-button speed-button"
+              onClick={cycleRate}
+              disabled={!videoUrl}
+              aria-label="再生速度を順送り変更"
+            >
+              {playbackRate}x
+            </button>
             <button
               className="play-button icon-with-label"
               onClick={handlePlayPause}
@@ -833,11 +836,14 @@ function App() {
                     Upload / Choose
                   </button>
                   {videoFile && <p className="meta">{videoFile.name}</p>}
-                  <div className="pill speed-group">
-                    <button onClick={cycleRate} disabled={!videoUrl} aria-label="再生速度を順送り変更">
-                      {playbackRate}x
-                    </button>
-                  </div>
+                  <button
+                    className="icon-button chip-button speed-button wide"
+                    onClick={cycleRate}
+                    disabled={!videoUrl}
+                    aria-label="再生速度を順送り変更"
+                  >
+                    {playbackRate}x
+                  </button>
                 </section>
 
                 <section>
