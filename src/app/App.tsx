@@ -469,10 +469,11 @@ export default function App() {
         onPointerUp={handlePointerUp}
       >
         {videoUrl && (
-          <div className="pointer-events-none absolute left-0 top-0 z-[4] p-3">
+          <div className="pointer-events-auto absolute left-0 top-0 z-[4] p-3">
             <button
               className={ctaButton}
               onClick={() => fileInputRef.current?.click()}
+              onPointerDown={(event) => event.stopPropagation()}
               aria-label="動画を選択"
               title="動画を選択"
             >
@@ -495,7 +496,11 @@ export default function App() {
             />
           ) : (
             <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-slate-900/70 to-slate-900/50 p-4 text-center text-slate-300">
-              <button className={ctaButton} onClick={() => fileInputRef.current?.click()}>
+              <button
+                className={ctaButton}
+                onClick={() => fileInputRef.current?.click()}
+                onPointerDown={(event) => event.stopPropagation()}
+              >
                 <FolderOpen aria-hidden size={20} />
                 Choose video
               </button>
