@@ -89,6 +89,24 @@ export function ControlsOverlay({
     <>
       <div
         className={cx(
+          'pointer-events-none absolute left-0 right-0 top-0 z-[3] flex justify-center px-2 pt-3 transition-[opacity,transform] duration-200',
+          fadeClass
+        )}
+      >
+        <div
+          className={cx(
+            btnBase,
+            'pointer-events-auto justify-center bg-slate-900/35 px-3 text-sm font-semibold shadow-none hover:bg-slate-900/50 hover:shadow-none'
+          )}
+        >
+          <small className="tabular-nums text-slate-200">
+            {formatTime(hasDuration ? currentTime : 0)} / {formatTime(hasDuration ? duration : 0)}
+          </small>
+        </div>
+      </div>
+
+      <div
+        className={cx(
           'pointer-events-none absolute right-0 top-0 bottom-0 z-[3] flex items-center justify-end px-1 transition-[opacity,transform] duration-200',
           fadeClass
         )}
@@ -140,17 +158,6 @@ export function ControlsOverlay({
         )}
       >
         <div className="pointer-events-auto flex w-full max-w-[780px] flex-col items-center gap-2.5">
-          <div
-            className={cx(
-              btnBase,
-              'justify-center bg-slate-900/35 px-1 text-sm font-semibold shadow-none hover:bg-slate-900/50 hover:shadow-none'
-            )}
-          >
-            <small className="tabular-nums text-slate-200">
-              {formatTime(hasDuration ? currentTime : 0)} / {formatTime(hasDuration ? duration : 0)}
-            </small>
-          </div>
-
           <div className="flex flex-wrap items-center justify-center gap-2.5">
             <button
               className={chipButton}

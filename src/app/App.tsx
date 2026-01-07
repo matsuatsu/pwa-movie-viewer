@@ -539,6 +539,7 @@ export default function App() {
             className={btnBase}
             onClick={handleAppModeToggle}
             onPointerDown={(event) => event.stopPropagation()}
+            disabled={!videoUrl}
             aria-label="視聴モードと描画モードを切り替え"
             title="視聴モードと描画モードを切り替え"
           >
