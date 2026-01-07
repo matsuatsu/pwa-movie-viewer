@@ -93,14 +93,14 @@ export function ControlsOverlay({
   );
   const videoSelectSoloButton = cx(
     standoutChipButton,
-    'h-14 w-14 min-w-0 rounded-full p-0'
+    'h-[84px] w-[84px] min-w-0 rounded-full p-0'
   );
 
   const preventContextMenu = (event: React.MouseEvent) => event.preventDefault();
 
   if (!hasVideo) {
     return (
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] flex justify-center pb-[calc(1.25rem+var(--safe-bottom))]">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] flex justify-center pb-[calc(2.5rem+var(--safe-bottom))]">
         <button
           className={cx(videoSelectSoloButton, 'pointer-events-auto')}
           onClick={onVideoSelect}
