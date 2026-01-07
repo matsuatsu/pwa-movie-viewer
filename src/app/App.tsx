@@ -7,8 +7,6 @@ import { useCanvasSize, type Rect } from './hooks/useCanvasSize';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import { useDrawCanvas } from './hooks/useDrawCanvas';
 import { clampPoint, distanceToSegment } from './utils/geometry';
-import { cx } from './utils/classnames';
-import { FolderOpen } from 'lucide-react';
 
 type Mode = 'draw' | 'select';
 type AppMode = 'draw' | 'playback';
@@ -514,17 +512,6 @@ export default function App() {
   const hasVideo = Boolean(videoUrl);
   const isDrawMode = appMode === 'draw';
 
-  const btnBase =
-    'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[0.9rem] border border-slate-700 bg-slate-800 px-3 py-2.5 font-semibold text-slate-200 ' +
-    'transition-[transform,box-shadow,background,opacity] duration-150 hover:-translate-y-px hover:bg-slate-900 hover:shadow-[0_8px_20px_rgba(0,0,0,0.3)] ' +
-    'disabled:cursor-not-allowed disabled:opacity-45';
-  const iconWithLabel = 'flex-col gap-1.5 text-center leading-tight';
-  const ctaButton = cx(
-    btnBase,
-    iconWithLabel,
-    'border-0 bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 shadow-[0_18px_45px_rgba(0,0,0,0.35)] px-4 py-3 text-[1.05rem] rounded-[0.95rem]'
-  );
-
   return (
     <div className="relative h-[var(--viewport-height,100dvh)] w-screen overflow-hidden text-slate-200">
       <div
@@ -548,14 +535,7 @@ export default function App() {
             />
           ) : (
             <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-slate-900/70 to-slate-900/50 p-4 text-center text-slate-300">
-              <button
-                className={ctaButton}
-                onClick={() => fileInputRef.current?.click()}
-                onPointerDown={(event) => event.stopPropagation()}
-              >
-                <FolderOpen aria-hidden size={20} />
-                動画を選択
-              </button>
+              <span className="sr-only">動画を選択</span>
             </div>
           )}
         </div>
