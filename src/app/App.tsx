@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DrawingAction, LineShape, Point } from '../types';
 import { loadDrawing, saveDrawing } from '../storage';
-import { ControlsOverlay } from './ui/ControlsOverlay';
+import { ControlsSidebar, FooterControls, HeaderTime } from './ui/ControlsOverlay';
 import { HISTORY_LIMIT, LINE_HIT_THRESHOLD, STEP_EPS, HANDLE_HIT_RADIUS } from './constants';
 import { useCanvasSize, type Rect } from './hooks/useCanvasSize';
 import { useViewportHeight } from './hooks/useViewportHeight';
@@ -513,9 +513,18 @@ export default function App() {
   const isDrawMode = appMode === 'draw';
 
   return (
-    <div className="relative h-[var(--viewport-height,100dvh)] w-screen overflow-hidden text-slate-200">
-      <div
-        className="relative h-full w-full touch-manipulation bg-[#0b1220]"
+    <div className="flex h-[var(--viewport-height,100dvh)] w-screen flex-col overflow-hidden bg-[#0b1220] text-slate-200">
+      <header className="shrink-0 border-b border-slate-800/80 bg-slate-950/70 px-3 py-2.5 backdrop-blur">
+        <HeaderTime
+          controlsVisible={controlsVisible}
+          hasDuration={hasDuration}
+          currentTime={currentTime}
+          duration={duration}
+        />
+      </header>
+
+      <main
+        className="relative flex-1 touch-manipulation bg-[#0b1220]"
         ref={containerRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -531,7 +540,7 @@ export default function App() {
               disablePictureInPicture
               controlsList="nodownload noremoteplayback nofullscreen"
               aria-label="Swing video"
-              className="h-[90%] w-[90%] bg-black object-contain pointer-events-none"
+              className="h-[92%] w-[92%] bg-black object-contain pointer-events-none"
             />
           ) : (
             <div className="absolute inset-0" />
@@ -544,25 +553,32 @@ export default function App() {
           style={{ pointerEvents: videoUrl && isDrawMode ? 'auto' : 'none' }}
         />
 
-        <ControlsOverlay
+        <ControlsSidebar
           controlsVisible={controlsVisible}
           appMode={appMode}
           mode={mode}
+          hasVideo={hasVideo}
+          canUndo={history.length > 0}
+          canRedo={redoStack.length > 0}
+          canDelete={Boolean(selectedId)}
+          onAppModeToggle={handleAppModeToggle}
+          onModeToggle={handleModeToggle}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onDelete={deleteSelected}
+        />
+      </main>
+
+      <footer className="shrink-0 border-t border-slate-800/80 bg-slate-950/70 px-3 py-3 pb-[calc(0.75rem+var(--safe-bottom))] backdrop-blur">
+        <FooterControls
+          controlsVisible={controlsVisible}
           isPlaying={isPlaying}
           playbackRate={playbackRate}
           hasVideo={hasVideo}
           hasDuration={hasDuration}
           currentTime={currentTime}
           duration={duration}
-          canUndo={history.length > 0}
-          canRedo={redoStack.length > 0}
-          canDelete={Boolean(selectedId)}
-          onAppModeToggle={handleAppModeToggle}
           onVideoSelect={() => fileInputRef.current?.click()}
-          onModeToggle={handleModeToggle}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onDelete={deleteSelected}
           onStepBackStart={() => startStepping(-1)}
           onStepBackEnd={stopStepping}
           onCycleRate={cycleRate}
@@ -571,7 +587,7 @@ export default function App() {
           onStepForwardEnd={stopStepping}
           onSeek={handleSeek}
         />
-      </div>
+      </footer>
 
       <input ref={fileInputRef} type="file" accept="video/*" onChange={onFileChange} className="hidden" />
     </div>
