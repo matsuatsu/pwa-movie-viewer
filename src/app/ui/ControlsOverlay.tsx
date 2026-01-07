@@ -145,15 +145,9 @@ export function ControlsOverlay({
                 title="描画と編集を切り替え"
               >
                 {mode === 'draw' ? (
-                  <>
-                    <Brush aria-hidden size={18} />
-                    描画
-                  </>
+                  <Brush aria-hidden size={18} />
                 ) : (
-                  <>
-                    <MousePointer2 aria-hidden size={18} />
-                    編集
-                  </>
+                  <MousePointer2 aria-hidden size={18} />
                 )}
               </button>
             </>
@@ -167,7 +161,6 @@ export function ControlsOverlay({
               title="視聴モードと描画モードを切り替え"
             >
               <Brush aria-hidden size={18} />
-              視聴
             </button>
           )}
         </div>
