@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  FolderOpen,
   MousePointer2,
   Pause,
   Pencil,
@@ -29,6 +30,8 @@ type Props = {
   canUndo: boolean;
   canRedo: boolean;
   canDelete: boolean;
+  onAppModeToggle: () => void;
+  onVideoSelect: () => void;
   onModeToggle: () => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -55,6 +58,8 @@ export function ControlsOverlay({
   canUndo,
   canRedo,
   canDelete,
+  onAppModeToggle,
+  onVideoSelect,
   onModeToggle,
   onUndo,
   onRedo,
@@ -82,6 +87,7 @@ export function ControlsOverlay({
   );
   const sidebarActive = 'bg-emerald-500/20 text-emerald-100 border-emerald-300/45';
   const chipButton = cx(btnBase, 'h-[44px] min-w-[44px] px-2 py-1.5 text-[0.9rem]');
+  const labeledChipButton = cx(btnBase, 'h-[44px] px-3 py-1.5 text-[0.9rem]');
 
   const preventContextMenu = (event: React.MouseEvent) => event.preventDefault();
 
@@ -159,6 +165,24 @@ export function ControlsOverlay({
       >
         <div className="pointer-events-auto flex w-full max-w-[780px] flex-col items-center gap-2.5">
           <div className="flex flex-wrap items-center justify-center gap-2.5">
+            <button
+              className={cx(labeledChipButton, 'flex-row gap-2')}
+              onClick={onVideoSelect}
+              aria-label="動画を選択"
+              title="動画を選択"
+            >
+              <FolderOpen aria-hidden size={18} />
+              動画選択
+            </button>
+            <button
+              className={labeledChipButton}
+              onClick={onAppModeToggle}
+              disabled={!hasVideo}
+              aria-label="視聴モードと描画モードを切り替え"
+              title="視聴モードと描画モードを切り替え"
+            >
+              {appMode === 'playback' ? '視聴モード' : '描画モード'}
+            </button>
             <button
               className={chipButton}
               onPointerDown={onStepBackStart}
