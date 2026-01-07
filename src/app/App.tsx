@@ -521,7 +521,7 @@ export default function App() {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <div className="absolute inset-0 flex items-start justify-center pt-4">
+        <div className="absolute inset-0 flex items-start justify-center">
           {videoUrl ? (
             <video
               ref={videoRef}
