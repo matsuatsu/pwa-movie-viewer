@@ -539,10 +539,10 @@ export default function App() {
             className={btnBase}
             onClick={handleAppModeToggle}
             onPointerDown={(event) => event.stopPropagation()}
-            aria-label="再生モードと描画モードを切り替え"
-            title="再生モードと描画モードを切り替え"
+            aria-label="視聴モードと描画モードを切り替え"
+            title="視聴モードと描画モードを切り替え"
           >
-            {appMode === 'playback' ? '再生モード' : '描画モード'}
+            {appMode === 'playback' ? '視聴モード' : '描画モード'}
           </button>
         </div>
         {videoUrl && (
@@ -555,7 +555,7 @@ export default function App() {
               title="動画を選択"
             >
               <FolderOpen aria-hidden size={20} />
-              Choose video
+              動画を選択
             </button>
           </div>
         )}
@@ -579,7 +579,7 @@ export default function App() {
                 onPointerDown={(event) => event.stopPropagation()}
               >
                 <FolderOpen aria-hidden size={20} />
-                Choose video
+                動画を選択
               </button>
             </div>
           )}

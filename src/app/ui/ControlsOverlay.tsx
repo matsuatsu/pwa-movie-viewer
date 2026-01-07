@@ -98,35 +98,35 @@ export function ControlsOverlay({
             className={sidebarButton}
             onClick={onDelete}
             disabled={!canDelete || !drawModeEnabled}
-            aria-label="Delete selected"
+            aria-label="選択を削除"
           >
             <Trash2 aria-hidden size={18} />
-            Delete
+            削除
           </button>
-          <button className={sidebarButton} onClick={onUndo} disabled={!canUndo || !drawModeEnabled} aria-label="Undo">
+          <button className={sidebarButton} onClick={onUndo} disabled={!canUndo || !drawModeEnabled} aria-label="元に戻す">
             <Undo2 aria-hidden size={18} />
-            Undo
+            元に戻す
           </button>
-          <button className={sidebarButton} onClick={onRedo} disabled={!canRedo || !drawModeEnabled} aria-label="Redo">
+          <button className={sidebarButton} onClick={onRedo} disabled={!canRedo || !drawModeEnabled} aria-label="やり直す">
             <Redo2 aria-hidden size={18} />
-            Redo
+            やり直す
           </button>
           <button
             className={cx(sidebarButton, mode === 'select' && sidebarActive)}
             onClick={onModeToggle}
             disabled={!hasVideo || !drawModeEnabled}
-            aria-label="Toggle draw or edit"
-            title="Toggle draw or edit"
+            aria-label="描画と編集を切り替え"
+            title="描画と編集を切り替え"
           >
             {mode === 'draw' ? (
               <>
                 <Pencil aria-hidden size={18} />
-                Draw
+                描画
               </>
             ) : (
               <>
                 <MousePointer2 aria-hidden size={18} />
-                Edit
+                編集
               </>
             )}
           </button>
