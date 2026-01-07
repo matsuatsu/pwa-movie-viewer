@@ -540,7 +540,7 @@ export default function App() {
               disablePictureInPicture
               controlsList="nodownload noremoteplayback nofullscreen"
               aria-label="Swing video"
-              className="h-[92%] w-[92%] bg-black object-contain pointer-events-none"
+              className="h-full w-full bg-black object-contain pointer-events-none"
             />
           ) : (
             <div className="absolute inset-0" />
