@@ -69,7 +69,6 @@ export function ControlsOverlay({
 }: Props) {
   const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2';
   const drawModeEnabled = appMode === 'draw';
-  const playbackEnabled = appMode === 'playback';
 
   const btnBase =
     'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[0.9rem] border border-slate-700 bg-slate-800 px-3 py-2.5 font-semibold text-slate-200 select-none ' +
@@ -160,7 +159,7 @@ export function ControlsOverlay({
               onPointerLeave={onStepBackEnd}
               onPointerCancel={onStepBackEnd}
               onContextMenu={preventContextMenu}
-              disabled={!hasVideo || !playbackEnabled}
+              disabled={!hasVideo}
               aria-label="1フレーム戻す"
             >
               <StepBack aria-hidden size={18} />
@@ -172,7 +171,7 @@ export function ControlsOverlay({
                 'w-[60px] min-w-[60px] bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none'
               )}
               onClick={onCycleRate}
-              disabled={!hasVideo || !playbackEnabled}
+              disabled={!hasVideo}
               aria-label="再生速度を順送り変更"
             >
               {playbackRate}x
@@ -180,7 +179,7 @@ export function ControlsOverlay({
             <button
               className={cx(btnBase, iconWithLabel, 'bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none')}
               onClick={onPlayPause}
-              disabled={!hasVideo || !playbackEnabled}
+              disabled={!hasVideo}
               aria-label={isPlaying ? '一時停止' : '再生'}
             >
               {isPlaying ? (
@@ -202,7 +201,7 @@ export function ControlsOverlay({
               onPointerLeave={onStepForwardEnd}
               onPointerCancel={onStepForwardEnd}
               onContextMenu={preventContextMenu}
-              disabled={!hasVideo || !playbackEnabled}
+              disabled={!hasVideo}
               aria-label="1フレーム進める"
             >
               <StepForward aria-hidden size={18} />
@@ -224,7 +223,7 @@ export function ControlsOverlay({
               step={0.001}
               value={hasDuration ? currentTime : 0}
               onChange={(e) => onSeek(Number(e.target.value))}
-              disabled={!hasDuration || !playbackEnabled}
+              disabled={!hasDuration}
               aria-label="シークバー"
             />
           </div>
