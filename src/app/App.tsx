@@ -534,32 +534,6 @@ export default function App() {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <div className="pointer-events-auto absolute right-0 top-0 z-[4] p-3">
-          <button
-            className={btnBase}
-            onClick={handleAppModeToggle}
-            onPointerDown={(event) => event.stopPropagation()}
-            disabled={!videoUrl}
-            aria-label="視聴モードと描画モードを切り替え"
-            title="視聴モードと描画モードを切り替え"
-          >
-            {appMode === 'playback' ? '視聴モード' : '描画モード'}
-          </button>
-        </div>
-        {videoUrl && (
-          <div className="pointer-events-auto absolute left-0 top-0 z-[4] p-3">
-            <button
-              className={cx(ctaButton, 'flex-row items-center gap-2 text-left')}
-              onClick={() => fileInputRef.current?.click()}
-              onPointerDown={(event) => event.stopPropagation()}
-              aria-label="動画を選択"
-              title="動画を選択"
-            >
-              <FolderOpen aria-hidden size={20} />
-              動画を選択
-            </button>
-          </div>
-        )}
         <div className="absolute inset-0 flex items-start justify-center pt-4">
           {videoUrl ? (
             <video
@@ -605,6 +579,8 @@ export default function App() {
           canUndo={history.length > 0}
           canRedo={redoStack.length > 0}
           canDelete={Boolean(selectedId)}
+          onAppModeToggle={handleAppModeToggle}
+          onVideoSelect={() => fileInputRef.current?.click()}
           onModeToggle={handleModeToggle}
           onUndo={handleUndo}
           onRedo={handleRedo}
