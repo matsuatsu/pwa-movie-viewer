@@ -548,7 +548,7 @@ export default function App() {
         {videoUrl && (
           <div className="pointer-events-auto absolute left-0 top-0 z-[4] p-3">
             <button
-              className={ctaButton}
+              className={cx(ctaButton, 'flex-row items-center gap-2 text-left')}
               onClick={() => fileInputRef.current?.click()}
               onPointerDown={(event) => event.stopPropagation()}
               aria-label="動画を選択"
