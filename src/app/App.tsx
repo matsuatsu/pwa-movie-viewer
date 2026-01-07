@@ -534,9 +534,7 @@ export default function App() {
               className="h-[90%] w-[90%] bg-black object-contain pointer-events-none"
             />
           ) : (
-            <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-slate-900/70 to-slate-900/50 p-4 text-center text-slate-300">
-              <span className="sr-only">動画を選択</span>
-            </div>
+            <div className="absolute inset-0" />
           )}
         </div>
 

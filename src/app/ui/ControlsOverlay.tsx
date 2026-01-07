@@ -91,8 +91,27 @@ export function ControlsOverlay({
     btnBase,
     'h-[44px] min-w-[52px] px-2 py-1.5 border-0 bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 shadow-[0_14px_32px_rgba(0,0,0,0.35)] hover:from-sky-400 hover:to-emerald-400'
   );
+  const videoSelectSoloButton = cx(
+    standoutChipButton,
+    'h-14 w-14 min-w-0 rounded-full p-0'
+  );
 
   const preventContextMenu = (event: React.MouseEvent) => event.preventDefault();
+
+  if (!hasVideo) {
+    return (
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] flex justify-center pb-[calc(1.25rem+var(--safe-bottom))]">
+        <button
+          className={cx(videoSelectSoloButton, 'pointer-events-auto')}
+          onClick={onVideoSelect}
+          aria-label="動画を選択"
+          title="動画を選択"
+        >
+          <FolderOpen aria-hidden size={22} />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
