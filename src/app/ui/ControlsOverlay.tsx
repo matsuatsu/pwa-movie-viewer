@@ -129,15 +129,12 @@ export function ControlsOverlay({
             aria-label="選択を削除"
           >
             <Trash2 aria-hidden size={18} />
-            削除
           </button>
           <button className={sidebarButton} onClick={onUndo} disabled={!canUndo || !drawModeEnabled} aria-label="元に戻す">
             <Undo2 aria-hidden size={18} />
-            元に戻す
           </button>
           <button className={sidebarButton} onClick={onRedo} disabled={!canRedo || !drawModeEnabled} aria-label="やり直す">
             <Redo2 aria-hidden size={18} />
-            やり直す
           </button>
           <button
             className={cx(sidebarButton, mode === 'select' && sidebarActive)}
