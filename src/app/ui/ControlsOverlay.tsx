@@ -89,11 +89,11 @@ export function ControlsOverlay({
     <>
       <div
         className={cx(
-          'pointer-events-none absolute left-0 top-0 bottom-0 z-[3] flex items-center justify-start px-1 transition-[opacity,transform] duration-200',
+          'pointer-events-none absolute right-0 top-0 bottom-0 z-[3] flex items-center justify-end px-1 transition-[opacity,transform] duration-200',
           fadeClass
         )}
       >
-        <div className="pointer-events-auto flex flex-col items-start gap-2.5">
+        <div className="pointer-events-auto flex flex-col items-end gap-2.5">
           <button
             className={sidebarButton}
             onClick={onDelete}
