@@ -10,7 +10,6 @@ import {
   StepForward,
   Trash2,
   Undo2,
-  Video,
 } from 'lucide-react';
 import { cx } from '../utils/classnames';
 import { formatTime } from '../utils/time';
@@ -167,7 +166,7 @@ export function ControlsOverlay({
               aria-label="視聴モードと描画モードを切り替え"
               title="視聴モードと描画モードを切り替え"
             >
-              <Video aria-hidden size={18} />
+              <Brush aria-hidden size={18} />
               視聴
             </button>
           )}
