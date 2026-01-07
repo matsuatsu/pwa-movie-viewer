@@ -134,7 +134,7 @@ export function ControlsOverlay({
           <div
             className={cx(
               btnBase,
-              'justify-center bg-slate-900/35 p-1 text-sm font-semibold shadow-none hover:bg-slate-900/50 hover:shadow-none'
+              'justify-center bg-slate-900/35 px-1 text-sm font-semibold shadow-none hover:bg-slate-900/50 hover:shadow-none'
             )}
           >
             <small className="tabular-nums text-slate-200">
@@ -223,4 +223,3 @@ export function ControlsOverlay({
     </>
   );
 }
-
