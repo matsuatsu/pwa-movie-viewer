@@ -124,6 +124,16 @@ export default function App() {
     };
   }, [videoUrl]);
 
+  const ensurePlaybackMode = useCallback(() => {
+    setAppMode((prev) => {
+      if (prev === 'playback') return prev;
+      setDraftLine(null);
+      setSelectedId(null);
+      editSessionRef.current = null;
+      return 'playback';
+    });
+  }, []);
+
   const toNormalizedPoint = (event: React.PointerEvent) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect || !videoBounds) return null;
@@ -380,6 +390,7 @@ export default function App() {
   const handlePlayPause = () => {
     const video = videoRef.current;
     if (!video) return;
+    ensurePlaybackMode();
     showControls();
     if (isPlaying) {
       video.pause();
@@ -390,6 +401,7 @@ export default function App() {
   };
 
   const handleRateChange = (value: number) => {
+    ensurePlaybackMode();
     setPlaybackRate(value);
     if (videoRef.current) {
       videoRef.current.playbackRate = value;
@@ -407,6 +419,7 @@ export default function App() {
   const step = (direction: number) => {
     const video = videoRef.current;
     if (!video || !duration) return;
+    ensurePlaybackMode();
     showControls();
     video.pause();
     const target = Math.min(duration, Math.max(0, video.currentTime + direction * STEP_EPS));
@@ -430,6 +443,7 @@ export default function App() {
   const startStepping = (direction: number) => {
     const video = videoRef.current;
     if (!video || !duration) return;
+    ensurePlaybackMode();
     showControls();
     stopStepping();
     step(direction);
@@ -439,6 +453,7 @@ export default function App() {
   const handleSeek = (value: number) => {
     const video = videoRef.current;
     if (!video || !duration) return;
+    ensurePlaybackMode();
     showControls(true);
     video.currentTime = value;
     setCurrentTime(value);
