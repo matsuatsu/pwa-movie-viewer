@@ -96,6 +96,23 @@ export function ControlsOverlay({
       >
         <div className="pointer-events-auto flex flex-col items-start gap-2.5">
           <button
+            className={sidebarButton}
+            onClick={onDelete}
+            disabled={!canDelete || !drawModeEnabled}
+            aria-label="Delete selected"
+          >
+            <Trash2 aria-hidden size={18} />
+            Delete
+          </button>
+          <button className={sidebarButton} onClick={onUndo} disabled={!canUndo || !drawModeEnabled} aria-label="Undo">
+            <Undo2 aria-hidden size={18} />
+            Undo
+          </button>
+          <button className={sidebarButton} onClick={onRedo} disabled={!canRedo || !drawModeEnabled} aria-label="Redo">
+            <Redo2 aria-hidden size={18} />
+            Redo
+          </button>
+          <button
             className={cx(sidebarButton, mode === 'select' && sidebarActive)}
             onClick={onModeToggle}
             disabled={!hasVideo || !drawModeEnabled}
@@ -113,23 +130,6 @@ export function ControlsOverlay({
                 Edit
               </>
             )}
-          </button>
-          <button className={sidebarButton} onClick={onUndo} disabled={!canUndo || !drawModeEnabled} aria-label="Undo">
-            <Undo2 aria-hidden size={18} />
-            Undo
-          </button>
-          <button className={sidebarButton} onClick={onRedo} disabled={!canRedo || !drawModeEnabled} aria-label="Redo">
-            <Redo2 aria-hidden size={18} />
-            Redo
-          </button>
-          <button
-            className={sidebarButton}
-            onClick={onDelete}
-            disabled={!canDelete || !drawModeEnabled}
-            aria-label="Delete selected"
-          >
-            <Trash2 aria-hidden size={18} />
-            Delete
           </button>
         </div>
       </div>
@@ -178,7 +178,10 @@ export function ControlsOverlay({
               {playbackRate}x
             </button>
             <button
-              className={cx(btnBase, iconWithLabel, 'bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none')}
+              className={cx(
+                btnBase,
+                'min-w-[96px] flex-row gap-2 bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none'
+              )}
               onClick={onPlayPause}
               disabled={!hasVideo || !playbackEnabled}
               aria-label={isPlaying ? '一時停止' : '再生'}
