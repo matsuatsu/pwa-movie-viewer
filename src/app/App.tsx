@@ -11,6 +11,7 @@ import { cx } from './utils/classnames';
 import { FolderOpen } from 'lucide-react';
 
 type Mode = 'draw' | 'select';
+type AppMode = 'draw' | 'playback';
 type DragType = 'p1' | 'p2' | 'move';
 
 type EditSession = {
@@ -36,6 +37,7 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
+  const [appMode, setAppMode] = useState<AppMode>('draw');
   const [mode, setMode] = useState<Mode>('draw');
   const [lines, setLines] = useState<LineShape[]>([]);
   const [draftLine, setDraftLine] = useState<LineShape | null>(null);
@@ -191,6 +193,10 @@ export default function App() {
   };
 
   const handlePointerDown = (event: React.PointerEvent) => {
+    if (appMode !== 'draw') {
+      showControls(true);
+      return;
+    }
     if (!videoUrl || event.button === 2) return;
     const pointerTarget = event.target as HTMLElement | null;
     if (pointerTarget?.closest('button, input, select, textarea')) return;
@@ -251,6 +257,7 @@ export default function App() {
   };
 
   const handlePointerMove = (event: React.PointerEvent) => {
+    if (appMode !== 'draw') return;
     const point = toNormalizedPoint(event);
     if (draftLine) {
       if (!point) return;
@@ -283,6 +290,7 @@ export default function App() {
   };
 
   const handlePointerUp = () => {
+    if (appMode !== 'draw') return;
     if (draftLine) {
       setLines((prev) => [...prev, draftLine]);
       pushHistory({ type: 'add', line: draftLine });
@@ -455,6 +463,18 @@ export default function App() {
     setMode((prev) => (prev === 'draw' ? 'select' : 'draw'));
   };
 
+  const handleAppModeToggle = () => {
+    showControls(true);
+    if (appMode === 'playback') {
+      videoRef.current?.pause();
+    } else {
+      setDraftLine(null);
+      setSelectedId(null);
+      editSessionRef.current = null;
+    }
+    setAppMode((prev) => (prev === 'draw' ? 'playback' : 'draw'));
+  };
+
   useEffect(() => {
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
@@ -477,6 +497,7 @@ export default function App() {
 
   const hasDuration = Boolean(duration && !Number.isNaN(duration));
   const hasVideo = Boolean(videoUrl);
+  const isDrawMode = appMode === 'draw';
 
   const btnBase =
     'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[0.9rem] border border-slate-700 bg-slate-800 px-3 py-2.5 font-semibold text-slate-200 ' +
@@ -498,6 +519,17 @@ export default function App() {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
+        <div className="pointer-events-auto absolute right-0 top-0 z-[4] p-3">
+          <button
+            className={btnBase}
+            onClick={handleAppModeToggle}
+            onPointerDown={(event) => event.stopPropagation()}
+            aria-label="再生モードと描画モードを切り替え"
+            title="再生モードと描画モードを切り替え"
+          >
+            {appMode === 'playback' ? '再生モード' : '描画モード'}
+          </button>
+        </div>
         {videoUrl && (
           <div className="pointer-events-auto absolute left-0 top-0 z-[4] p-3">
             <button
@@ -538,10 +570,15 @@ export default function App() {
           )}
         </div>
 
-        <canvas className="absolute inset-0 h-full w-full touch-none" ref={canvasRef} style={{ pointerEvents: videoUrl ? 'auto' : 'none' }} />
+        <canvas
+          className="absolute inset-0 h-full w-full touch-none"
+          ref={canvasRef}
+          style={{ pointerEvents: videoUrl && isDrawMode ? 'auto' : 'none' }}
+        />
 
         <ControlsOverlay
           controlsVisible={controlsVisible}
+          appMode={appMode}
           mode={mode}
           isPlaying={isPlaying}
           playbackRate={playbackRate}
@@ -570,4 +607,3 @@ export default function App() {
     </div>
   );
 }
-
