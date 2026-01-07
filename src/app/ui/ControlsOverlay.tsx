@@ -1,16 +1,16 @@
 import React from 'react';
 import {
-  Clapperboard,
+  Brush,
   FolderOpen,
   MousePointer2,
   Pause,
-  Pencil,
   Play,
   Redo2,
   StepBack,
   StepForward,
   Trash2,
   Undo2,
+  Video,
 } from 'lucide-react';
 import { cx } from '../utils/classnames';
 import { formatTime } from '../utils/time';
@@ -145,7 +145,7 @@ export function ControlsOverlay({
           >
             {mode === 'draw' ? (
               <>
-                <Pencil aria-hidden size={18} />
+                <Brush aria-hidden size={18} />
                 描画
               </>
             ) : (
@@ -181,7 +181,7 @@ export function ControlsOverlay({
               aria-label="視聴モードと描画モードを切り替え"
               title="視聴モードと描画モードを切り替え"
             >
-              {appMode === 'playback' ? <Clapperboard aria-hidden size={18} /> : <Pencil aria-hidden size={18} />}
+              {appMode === 'playback' ? <Video aria-hidden size={18} /> : <Brush aria-hidden size={18} />}
             </button>
             <button
               className={chipButton}
