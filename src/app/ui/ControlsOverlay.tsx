@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Clapperboard,
   FolderOpen,
   MousePointer2,
   Pause,
@@ -87,7 +88,10 @@ export function ControlsOverlay({
   );
   const sidebarActive = 'bg-emerald-500/20 text-emerald-100 border-emerald-300/45';
   const chipButton = cx(btnBase, 'h-[44px] min-w-[44px] px-2 py-1.5 text-[0.9rem]');
-  const labeledChipButton = cx(btnBase, 'h-[44px] px-3 py-1.5 text-[0.9rem]');
+  const standoutChipButton = cx(
+    btnBase,
+    'h-[44px] min-w-[52px] px-2 py-1.5 border-0 bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 shadow-[0_14px_32px_rgba(0,0,0,0.35)] hover:from-sky-400 hover:to-emerald-400'
+  );
 
   const preventContextMenu = (event: React.MouseEvent) => event.preventDefault();
 
@@ -166,22 +170,21 @@ export function ControlsOverlay({
         <div className="pointer-events-auto flex w-full max-w-[780px] flex-col items-center gap-2.5">
           <div className="flex flex-wrap items-center justify-center gap-2.5">
             <button
-              className={cx(labeledChipButton, 'flex-row gap-2')}
+              className={cx(standoutChipButton, 'flex-row gap-2')}
               onClick={onVideoSelect}
               aria-label="動画を選択"
               title="動画を選択"
             >
               <FolderOpen aria-hidden size={18} />
-              動画選択
             </button>
             <button
-              className={labeledChipButton}
+              className={chipButton}
               onClick={onAppModeToggle}
               disabled={!hasVideo}
               aria-label="視聴モードと描画モードを切り替え"
               title="視聴モードと描画モードを切り替え"
             >
-              {appMode === 'playback' ? '視聴モード' : '描画モード'}
+              {appMode === 'playback' ? <Clapperboard aria-hidden size={18} /> : <Pencil aria-hidden size={18} />}
             </button>
             <button
               className={chipButton}
@@ -194,7 +197,6 @@ export function ControlsOverlay({
               aria-label="1フレーム戻す"
             >
               <StepBack aria-hidden size={18} />
-              -1f
             </button>
             <button
               className={cx(
@@ -217,15 +219,9 @@ export function ControlsOverlay({
               aria-label={isPlaying ? '一時停止' : '再生'}
             >
               {isPlaying ? (
-                <>
-                  <Pause aria-hidden size={18} />
-                  一時停止
-                </>
+                <Pause aria-hidden size={18} />
               ) : (
-                <>
-                  <Play aria-hidden size={18} />
-                  再生
-                </>
+                <Play aria-hidden size={18} />
               )}
             </button>
             <button
@@ -239,7 +235,6 @@ export function ControlsOverlay({
               aria-label="1フレーム進める"
             >
               <StepForward aria-hidden size={18} />
-              +1f
             </button>
           </div>
 
