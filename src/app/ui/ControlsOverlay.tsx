@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Brush,
   FolderOpen,
-  MousePointer2,
   Pause,
   Play,
   Redo2,
@@ -14,7 +13,6 @@ import {
 import { cx } from '../utils/classnames';
 import { formatTime } from '../utils/time';
 
-type Mode = 'draw' | 'select';
 type AppMode = 'draw' | 'playback';
 
 type HeaderProps = {
@@ -45,13 +43,11 @@ type FooterProps = {
 type SidebarProps = {
   controlsVisible: boolean;
   appMode: AppMode;
-  mode: Mode;
   hasVideo: boolean;
   canUndo: boolean;
   canRedo: boolean;
   canDelete: boolean;
   onAppModeToggle: () => void;
-  onModeToggle: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onDelete: () => void;
@@ -67,7 +63,6 @@ const sidebarButton = cx(
   iconWithLabel,
   'h-[44px] w-[50px] min-w-[50px] px-2 py-1.5 text-[0.9rem] bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none'
 );
-const sidebarActive = 'bg-emerald-500/20 text-emerald-100 border-emerald-300/45';
 const chipButton = cx(btnBase, 'h-[44px] min-w-[44px] px-2 py-1.5 text-[0.9rem]');
 const standoutChipButton = cx(
   btnBase,
@@ -201,13 +196,11 @@ export function FooterControls({
 export function ControlsSidebar({
   controlsVisible,
   appMode,
-  mode,
   hasVideo,
   canUndo,
   canRedo,
   canDelete,
   onAppModeToggle,
-  onModeToggle,
   onUndo,
   onRedo,
   onDelete,
@@ -233,15 +226,6 @@ export function ControlsSidebar({
             </button>
             <button className={sidebarButton} onClick={onRedo} disabled={!canRedo} aria-label="やり直す">
               <Redo2 aria-hidden size={18} />
-            </button>
-            <button
-              className={cx(sidebarButton, mode === 'select' && sidebarActive)}
-              onClick={onModeToggle}
-              disabled={!hasVideo}
-              aria-label="描画と編集を切り替え"
-              title="描画と編集を切り替え"
-            >
-              {mode === 'draw' ? <Brush aria-hidden size={18} /> : <MousePointer2 aria-hidden size={18} />}
             </button>
           </>
         )}

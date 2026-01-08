@@ -8,7 +8,6 @@ import { useViewportHeight } from './hooks/useViewportHeight';
 import { useDrawCanvas } from './hooks/useDrawCanvas';
 import { clampPoint, distanceToSegment } from './utils/geometry';
 
-type Mode = 'draw' | 'select';
 type AppMode = 'draw' | 'playback';
 type DragType = 'p1' | 'p2' | 'move';
 
@@ -36,7 +35,6 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [appMode, setAppMode] = useState<AppMode>('draw');
-  const [mode, setMode] = useState<Mode>('draw');
   const [lines, setLines] = useState<LineShape[]>([]);
   const [draftLine, setDraftLine] = useState<LineShape | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -214,7 +212,6 @@ export default function App() {
     if (point) {
       const { line, target } = findHit(point);
       if (line) {
-        if (mode === 'draw') setMode('select');
         setSelectedId(line.id);
         editSessionRef.current = target
           ? {
@@ -228,7 +225,7 @@ export default function App() {
       }
     }
 
-    const canStartDrawing = mode === 'draw' || (mode === 'select' && !selectedId);
+    const canStartDrawing = !selectedId;
     if (canStartDrawing) {
       if (!point) return;
       const newDraft: LineShape = {
@@ -472,11 +469,6 @@ export default function App() {
     setRedoStack([]);
   };
 
-  const handleModeToggle = () => {
-    showControls(true);
-    setMode((prev) => (prev === 'draw' ? 'select' : 'draw'));
-  };
-
   const handleAppModeToggle = () => {
     showControls(true);
     if (appMode === 'playback') {
@@ -501,7 +493,7 @@ export default function App() {
         hideTimerRef.current = null;
       }
     };
-  }, [isPlaying, draftLine, mode, selectedId]);
+  }, [isPlaying, draftLine, selectedId]);
 
   useEffect(() => {
     return () => {
@@ -557,13 +549,11 @@ export default function App() {
         <ControlsSidebar
           controlsVisible={controlsVisible}
           appMode={appMode}
-          mode={mode}
           hasVideo={hasVideo}
           canUndo={history.length > 0}
           canRedo={redoStack.length > 0}
           canDelete={Boolean(selectedId)}
           onAppModeToggle={handleAppModeToggle}
-          onModeToggle={handleModeToggle}
           onUndo={handleUndo}
           onRedo={handleRedo}
           onDelete={deleteSelected}
