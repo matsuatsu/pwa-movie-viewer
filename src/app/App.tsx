@@ -228,7 +228,8 @@ export default function App() {
       }
     }
 
-    if (mode === 'draw') {
+    const canStartDrawing = mode === 'draw' || (mode === 'select' && !selectedId);
+    if (canStartDrawing) {
       if (!point) return;
       const newDraft: LineShape = {
         id: crypto.randomUUID(),
