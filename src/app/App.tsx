@@ -1,22 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DrawingAction, LineShape, Point } from '../types';
+import { LineShape } from '../types';
 import { loadDrawing, saveDrawing } from '../storage';
 import { ControlsSidebar, FooterControls, HeaderTime } from './ui/ControlsOverlay';
-import { HISTORY_LIMIT, LINE_HIT_THRESHOLD, STEP_EPS, HANDLE_HIT_RADIUS } from './constants';
+import { STEP_EPS } from './constants';
 import { useCanvasSize, type Rect } from './hooks/useCanvasSize';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import { useDrawCanvas } from './hooks/useDrawCanvas';
-import { clampPoint, distanceToSegment } from './utils/geometry';
+import { useDrawingState } from './hooks/useDrawingState';
 
 type AppMode = 'draw' | 'playback';
-type DragType = 'p1' | 'p2' | 'move';
-
-type EditSession = {
-  id: string;
-  before: LineShape;
-  lastPointer: Point;
-  type: DragType;
-};
 
 export default function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -24,9 +16,8 @@ export default function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
-  const editSessionRef = useRef<EditSession | null>(null);
   const stepIntervalRef = useRef<number | null>(null);
-  const playbackRateRef = useRef(1);
+  const draftLineRef = useRef<LineShape | null>(null);
 
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -35,16 +26,52 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [appMode, setAppMode] = useState<AppMode>('draw');
-  const [lines, setLines] = useState<LineShape[]>([]);
-  const [draftLine, setDraftLine] = useState<LineShape | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [history, setHistory] = useState<DrawingAction[]>([]);
-  const [redoStack, setRedoStack] = useState<DrawingAction[]>([]);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [videoBounds, setVideoBounds] = useState<Rect | null>(null);
 
   useViewportHeight();
   useCanvasSize(containerRef, canvasRef, videoRef, setVideoBounds);
+
+  const showControls = useCallback(
+    (persist = false) => {
+      setControlsVisible(true);
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+      if (persist || !isPlaying || draftLineRef.current) return;
+      hideTimerRef.current = window.setTimeout(() => {
+        setControlsVisible(false);
+      }, 2600);
+    },
+    [isPlaying]
+  );
+
+  const {
+    lines,
+    draftLine,
+    selectedId,
+    history,
+    redoStack,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handleUndo,
+    handleRedo,
+    deleteSelected,
+    resetDrawing,
+    clearInteraction,
+  } = useDrawingState({
+    appMode,
+    videoUrl,
+    videoBounds,
+    containerRef,
+    onShowControls: showControls,
+  });
+
+  useEffect(() => {
+    draftLineRef.current = draftLine;
+  }, [draftLine]);
+
   useDrawCanvas(canvasRef, lines, draftLine, selectedId, videoBounds);
 
   const videoKey = useMemo(
@@ -81,13 +108,10 @@ export default function App() {
       });
       if (videoKey) {
         loadDrawing(videoKey).then((saved) => {
-          setLines(saved ?? []);
-          setHistory([]);
-          setRedoStack([]);
-          setSelectedId(null);
+          resetDrawing(saved ?? []);
         });
       } else {
-        setLines([]);
+        resetDrawing([]);
       }
     };
     const updateTime = () => setCurrentTime(video.currentTime);
@@ -103,11 +127,7 @@ export default function App() {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, [playbackRate, videoKey]);
-
-  useEffect(() => {
-    playbackRateRef.current = playbackRate;
-  }, [playbackRate]);
+  }, [playbackRate, resetDrawing, videoKey]);
 
   useEffect(() => {
     if (!videoKey) return;
@@ -123,265 +143,10 @@ export default function App() {
   const ensurePlaybackMode = useCallback(() => {
     setAppMode((prev) => {
       if (prev === 'playback') return prev;
-      setDraftLine(null);
-      setSelectedId(null);
-      editSessionRef.current = null;
+      clearInteraction();
       return 'playback';
     });
-  }, []);
-
-  const toNormalizedPoint = (event: React.PointerEvent) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect || !videoBounds) return null;
-    const withinX = event.clientX - rect.left;
-    const withinY = event.clientY - rect.top;
-    if (
-      withinX < videoBounds.x ||
-      withinX > videoBounds.x + videoBounds.width ||
-      withinY < videoBounds.y ||
-      withinY > videoBounds.y + videoBounds.height
-    ) {
-      return null;
-    }
-    const x = (withinX - videoBounds.x) / videoBounds.width;
-    const y = (withinY - videoBounds.y) / videoBounds.height;
-    return clampPoint({ x, y });
-  };
-
-  const pushHistory = (action: DrawingAction) => {
-    setHistory((prev) => [...prev, action].slice(-HISTORY_LIMIT));
-    setRedoStack([]);
-  };
-
-  const showControls = (persist = false) => {
-    setControlsVisible(true);
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-    }
-    if (persist || !isPlaying || draftLine) return;
-    hideTimerRef.current = window.setTimeout(() => {
-      setControlsVisible(false);
-    }, 2600);
-  };
-
-  const findHit = (point: Point): { line: LineShape | null; target: DragType | null } => {
-    if (!videoBounds) return { line: null, target: null as DragType | null };
-    const hitHandle = lines.find((line) => {
-      const dx1 =
-        Math.hypot(
-          point.x * videoBounds.width - line.p1.x * videoBounds.width,
-          point.y * videoBounds.height - line.p1.y * videoBounds.height
-        ) < HANDLE_HIT_RADIUS;
-      const dx2 =
-        Math.hypot(
-          point.x * videoBounds.width - line.p2.x * videoBounds.width,
-          point.y * videoBounds.height - line.p2.y * videoBounds.height
-        ) < HANDLE_HIT_RADIUS;
-      return dx1 || dx2;
-    });
-
-    if (hitHandle) {
-      const handleType: DragType =
-        Math.hypot(
-          point.x * videoBounds.width - hitHandle.p1.x * videoBounds.width,
-          point.y * videoBounds.height - hitHandle.p1.y * videoBounds.height
-        ) < HANDLE_HIT_RADIUS
-          ? 'p1'
-          : 'p2';
-      return { line: hitHandle, target: handleType };
-    }
-
-    const hitLine = lines.find(
-      (line) => distanceToSegment(point, line.p1, line.p2, videoBounds.width, videoBounds.height) < LINE_HIT_THRESHOLD
-    );
-    if (hitLine) return { line: hitLine, target: 'move' as DragType };
-    return { line: null, target: null };
-  };
-
-  const handlePointerDown = (event: React.PointerEvent) => {
-    if (appMode !== 'draw') {
-      showControls(true);
-      return;
-    }
-    if (!videoUrl || event.button === 2) return;
-    const pointerTarget = event.target as HTMLElement | null;
-    if (pointerTarget?.closest('button, input, select, textarea')) return;
-    const point = toNormalizedPoint(event);
-    showControls(true);
-
-    if (point) {
-      const { line, target } = findHit(point);
-      if (line) {
-        setSelectedId(line.id);
-        editSessionRef.current = target
-          ? {
-              id: line.id,
-              before: { ...line },
-              lastPointer: point,
-              type: target,
-            }
-          : null;
-        return;
-      }
-    }
-
-    const canStartDrawing = !selectedId;
-    if (canStartDrawing) {
-      if (!point) return;
-      const newDraft: LineShape = {
-        id: crypto.randomUUID(),
-        type: 'line',
-        p1: point,
-        p2: point,
-        createdAt: Date.now(),
-      };
-      setDraftLine(newDraft);
-      return;
-    }
-
-    if (!point) {
-      setSelectedId(null);
-      editSessionRef.current = null;
-      return;
-    }
-
-    const { line, target } = findHit(point);
-    if (line && target) {
-      setSelectedId(line.id);
-      editSessionRef.current = {
-        id: line.id,
-        before: { ...line },
-        lastPointer: point,
-        type: target,
-      };
-    } else if (line) {
-      setSelectedId(line.id);
-    } else {
-      setSelectedId(null);
-      editSessionRef.current = null;
-    }
-  };
-
-  const handlePointerMove = (event: React.PointerEvent) => {
-    if (appMode !== 'draw') return;
-    const point = toNormalizedPoint(event);
-    if (draftLine) {
-      if (!point) return;
-      setDraftLine({ ...draftLine, p2: point });
-      return;
-    }
-
-    if (!point || !editSessionRef.current) return;
-    const session = editSessionRef.current;
-    setLines((prev) =>
-      prev.map((line) => {
-        if (line.id !== session.id) return line;
-        if (session.type === 'move') {
-          const delta = { x: point.x - session.lastPointer.x, y: point.y - session.lastPointer.y };
-          session.lastPointer = point;
-          return {
-            ...line,
-            p1: clampPoint({ x: line.p1.x + delta.x, y: line.p1.y + delta.y }),
-            p2: clampPoint({ x: line.p2.x + delta.x, y: line.p2.y + delta.y }),
-          };
-        }
-        if (session.type === 'p1') {
-          session.lastPointer = point;
-          return { ...line, p1: clampPoint(point) };
-        }
-        session.lastPointer = point;
-        return { ...line, p2: clampPoint(point) };
-      })
-    );
-  };
-
-  const handlePointerUp = () => {
-    if (appMode !== 'draw') return;
-    if (draftLine) {
-      setLines((prev) => [...prev, draftLine]);
-      pushHistory({ type: 'add', line: draftLine });
-      setDraftLine(null);
-      setSelectedId(draftLine.id);
-      return;
-    }
-    if (editSessionRef.current) {
-      const session = editSessionRef.current;
-      const updated = lines.find((l) => l.id === session.id);
-      if (
-        updated &&
-        (updated.p1.x !== session.before.p1.x ||
-          updated.p1.y !== session.before.p1.y ||
-          updated.p2.x !== session.before.p2.x ||
-          updated.p2.y !== session.before.p2.y)
-      ) {
-        pushHistory({ type: 'update', before: session.before, after: updated });
-      }
-    }
-    editSessionRef.current = null;
-  };
-
-  const handleUndo = () => {
-    showControls(true);
-    setHistory((prev) => {
-      const last = prev[prev.length - 1];
-      if (!last) return prev;
-      setLines((current) => {
-        if (last.type === 'add') {
-          return current.filter((l) => l.id !== last.line.id);
-        }
-        if (last.type === 'delete') {
-          return [...current, last.line];
-        }
-        return current.map((l) => (l.id === last.after.id ? last.before : l));
-      });
-      setRedoStack((redo) => [...redo, last].slice(-HISTORY_LIMIT));
-      return prev.slice(0, -1);
-    });
-  };
-
-  const handleRedo = () => {
-    showControls(true);
-    setRedoStack((prev) => {
-      const last = prev[prev.length - 1];
-      if (!last) return prev;
-      setLines((current) => {
-        if (last.type === 'add') {
-          return [...current, last.line];
-        }
-        if (last.type === 'delete') {
-          return current.filter((l) => l.id !== last.line.id);
-        }
-        return current.map((l) => (l.id === last.before.id ? last.after : l));
-      });
-      setHistory((hist) => [...hist, last].slice(-HISTORY_LIMIT));
-      return prev.slice(0, -1);
-    });
-  };
-
-  const deleteSelected = useCallback(() => {
-    if (!selectedId) return;
-    showControls(true);
-    const line = lines.find((l) => l.id === selectedId);
-    if (!line) return;
-    setLines((prev) => prev.filter((l) => l.id !== selectedId));
-    pushHistory({ type: 'delete', line });
-    setSelectedId(null);
-  }, [lines, selectedId]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Delete' || !selectedId) return;
-      const active = document.activeElement;
-      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
-        return;
-      }
-      event.preventDefault();
-      deleteSelected();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [deleteSelected, selectedId]);
+  }, [clearInteraction]);
 
   const handlePlayPause = () => {
     const video = videoRef.current;
@@ -463,10 +228,7 @@ export default function App() {
     const url = URL.createObjectURL(file);
     setVideoFile(file);
     setVideoUrl(url);
-    setLines([]);
-    setSelectedId(null);
-    setHistory([]);
-    setRedoStack([]);
+    resetDrawing([]);
   };
 
   const handleAppModeToggle = () => {
@@ -474,9 +236,7 @@ export default function App() {
     if (appMode === 'playback') {
       videoRef.current?.pause();
     } else {
-      setDraftLine(null);
-      setSelectedId(null);
-      editSessionRef.current = null;
+      clearInteraction();
     }
     setAppMode((prev) => (prev === 'draw' ? 'playback' : 'draw'));
   };
