@@ -63,6 +63,10 @@ const sidebarButton = cx(
   iconWithLabel,
   'h-[44px] w-[50px] min-w-[50px] px-2 py-1.5 text-[0.9rem] bg-slate-900/35 border-slate-600/60 shadow-none hover:bg-slate-900/50 hover:shadow-none'
 );
+const sidebarStandoutButton = cx(
+  sidebarButton,
+  'border-0 bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 shadow-[0_14px_32px_rgba(0,0,0,0.35)] hover:from-sky-400 hover:to-emerald-400'
+);
 const chipButton = cx(btnBase, 'h-[44px] min-w-[44px] px-2 py-1.5 text-[0.9rem]');
 const standoutChipButton = cx(
   btnBase,
@@ -231,7 +235,7 @@ export function ControlsSidebar({
         )}
         {appMode === 'playback' && (
           <button
-            className={sidebarButton}
+            className={sidebarStandoutButton}
             onClick={onAppModeToggle}
             disabled={!hasVideo}
             aria-label="視聴モードと描画モードを切り替え"
