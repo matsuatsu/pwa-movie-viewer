@@ -223,6 +223,7 @@ export default function App() {
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    ensurePlaybackMode();
     showControls(true);
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     const url = URL.createObjectURL(file);
