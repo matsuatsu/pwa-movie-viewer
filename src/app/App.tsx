@@ -266,6 +266,37 @@ export default function App() {
   const hasVideo = Boolean(videoUrl);
   const isDrawMode = appMode === 'draw';
 
+  const isPointerOnVideo = useCallback(
+    (event: React.PointerEvent) => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect || !videoBounds) return false;
+      const withinX = event.clientX - rect.left;
+      const withinY = event.clientY - rect.top;
+      return (
+        withinX >= videoBounds.x &&
+        withinX <= videoBounds.x + videoBounds.width &&
+        withinY >= videoBounds.y &&
+        withinY <= videoBounds.y + videoBounds.height
+      );
+    },
+    [videoBounds]
+  );
+
+  const handleMainPointerDown = (event: React.PointerEvent) => {
+    const pointerTarget = event.target as HTMLElement | null;
+    if (pointerTarget?.closest('button, input, select, textarea')) return;
+    if (appMode === 'playback') {
+      if (!videoUrl) return;
+      if (isPointerOnVideo(event)) {
+        handlePlayPause();
+      } else {
+        showControls(true);
+      }
+      return;
+    }
+    handlePointerDown(event);
+  };
+
   return (
     <div className="flex h-[var(--viewport-height,100dvh)] w-screen flex-col overflow-hidden bg-[#0b1220] text-slate-200">
       <header className="shrink-0 border-b border-slate-800/80 bg-slate-950/70 px-3 py-2.5 backdrop-blur">
@@ -280,7 +311,7 @@ export default function App() {
       <main
         className="relative flex-1 touch-manipulation bg-[#0b1220]"
         ref={containerRef}
-        onPointerDown={handlePointerDown}
+        onPointerDown={handleMainPointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
