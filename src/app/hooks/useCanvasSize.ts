@@ -1,6 +1,7 @@
 import { useEffect, type RefObject } from 'react';
+import { calculateVideoBounds, type Rect } from '../utils/videoBounds';
 
-export type Rect = { x: number; y: number; width: number; height: number };
+export type { Rect } from '../utils/videoBounds';
 
 export function useCanvasSize(
   container: RefObject<HTMLDivElement>,
@@ -25,20 +26,8 @@ export function useCanvasSize(
         onBounds(null);
         return;
       }
-      const containerAspect = rect.width / rect.height;
-      const videoAspect = vid.videoWidth / vid.videoHeight;
-      let width = rect.width;
-      let height = rect.height;
-      if (containerAspect > videoAspect) {
-        height = rect.height;
-        width = height * videoAspect;
-      } else {
-        width = rect.width;
-        height = width / videoAspect;
-      }
-      const x = (rect.width - width) / 2;
-      const y = (rect.height - height) / 2;
-      onBounds({ x, y, width, height });
+
+      onBounds(calculateVideoBounds(rect, vid.videoWidth, vid.videoHeight));
     };
     resize();
     window.addEventListener('resize', resize);

@@ -2,11 +2,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LineShape } from '../types';
 import { loadDrawing, saveDrawing } from '../storage';
 import { ControlsSidebar, FooterControls, HeaderTime } from './ui/ControlsOverlay';
-import { STEP_EPS } from './constants';
-import { useCanvasSize, type Rect } from './hooks/useCanvasSize';
+import { useCanvasSize } from './hooks/useCanvasSize';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import { useDrawCanvas } from './hooks/useDrawCanvas';
 import { useDrawingState } from './hooks/useDrawingState';
+import { useVideoPlayback } from './hooks/useVideoPlayback';
+import { calculateVideoBounds, type Rect } from './utils/videoBounds';
 
 type AppMode = 'draw' | 'playback';
 
@@ -16,15 +17,11 @@ export default function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
-  const stepIntervalRef = useRef<number | null>(null);
   const draftLineRef = useRef<LineShape | null>(null);
+  const isPlayingRef = useRef(false);
 
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1);
   const [appMode, setAppMode] = useState<AppMode>('draw');
   const [controlsVisible, setControlsVisible] = useState(true);
   const [videoBounds, setVideoBounds] = useState<Rect | null>(null);
@@ -32,19 +29,16 @@ export default function App() {
   useViewportHeight();
   useCanvasSize(containerRef, canvasRef, videoRef, setVideoBounds);
 
-  const showControls = useCallback(
-    (persist = false) => {
-      setControlsVisible(true);
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
-      if (persist || !isPlaying || draftLineRef.current) return;
-      hideTimerRef.current = window.setTimeout(() => {
-        setControlsVisible(false);
-      }, 2600);
-    },
-    [isPlaying]
-  );
+  const showControls = useCallback((persist = false) => {
+    setControlsVisible(true);
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+    }
+    if (persist || !isPlayingRef.current || draftLineRef.current) return;
+    hideTimerRef.current = window.setTimeout(() => {
+      setControlsVisible(false);
+    }, 2600);
+  }, []);
 
   const {
     lines,
@@ -79,32 +73,12 @@ export default function App() {
     [videoFile]
   );
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    const handleLoaded = () => {
-      setDuration(video.duration);
-      setCurrentTime(0);
-      video.playbackRate = playbackRate;
-      video.pause();
-      setIsPlaying(false);
+  const handleVideoLoaded = useCallback(
+    (video: HTMLVideoElement) => {
       setVideoBounds((prev) => {
         const rect = containerRef.current?.getBoundingClientRect();
         if (!rect || !video.videoWidth || !video.videoHeight) return prev;
-        const containerAspect = rect.width / rect.height;
-        const videoAspect = video.videoWidth / video.videoHeight;
-        let width = rect.width;
-        let height = rect.height;
-        if (containerAspect > videoAspect) {
-          height = rect.height;
-          width = height * videoAspect;
-        } else {
-          width = rect.width;
-          height = width / videoAspect;
-        }
-        const x = (rect.width - width) / 2;
-        const y = (rect.height - height) / 2;
-        return { x, y, width, height };
+        return calculateVideoBounds(rect, video.videoWidth, video.videoHeight);
       });
       if (videoKey) {
         loadDrawing(videoKey).then((saved) => {
@@ -113,21 +87,9 @@ export default function App() {
       } else {
         resetDrawing([]);
       }
-    };
-    const updateTime = () => setCurrentTime(video.currentTime);
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-    video.addEventListener('loadedmetadata', handleLoaded);
-    video.addEventListener('timeupdate', updateTime);
-    video.addEventListener('play', handlePlay);
-    video.addEventListener('pause', handlePause);
-    return () => {
-      video.removeEventListener('loadedmetadata', handleLoaded);
-      video.removeEventListener('timeupdate', updateTime);
-      video.removeEventListener('play', handlePlay);
-      video.removeEventListener('pause', handlePause);
-    };
-  }, [playbackRate, resetDrawing, videoKey]);
+    },
+    [resetDrawing, videoKey]
+  );
 
   useEffect(() => {
     if (!videoKey) return;
@@ -148,77 +110,26 @@ export default function App() {
     });
   }, [clearInteraction]);
 
-  const handlePlayPause = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    ensurePlaybackMode();
-    showControls();
-    if (isPlaying) {
-      video.pause();
-    } else {
-      video.playbackRate = playbackRate;
-      video.play();
-    }
-  };
+  const {
+    duration,
+    currentTime,
+    isPlaying,
+    playbackRate,
+    handlePlayPause,
+    cycleRate,
+    startStepping,
+    stopStepping,
+    handleSeek,
+  } = useVideoPlayback({
+    videoRef,
+    ensurePlaybackMode,
+    onShowControls: showControls,
+    onLoadedMetadata: handleVideoLoaded,
+  });
 
-  const handleRateChange = (value: number) => {
-    ensurePlaybackMode();
-    setPlaybackRate(value);
-    if (videoRef.current) {
-      videoRef.current.playbackRate = value;
-    }
-    showControls(true);
-  };
-
-  const cycleRate = () => {
-    const options = [0.1, 0.25, 1];
-    const currentIndex = options.indexOf(playbackRate);
-    const next = options[(currentIndex + 1) % options.length];
-    handleRateChange(next);
-  };
-
-  const step = (direction: number) => {
-    const video = videoRef.current;
-    if (!video || !duration) return;
-    ensurePlaybackMode();
-    showControls();
-    video.pause();
-    const target = Math.min(duration, Math.max(0, video.currentTime + direction * STEP_EPS));
-    if ('requestVideoFrameCallback' in video) {
-      (video as HTMLVideoElement & { requestVideoFrameCallback?: any }).requestVideoFrameCallback?.(() => {
-        setCurrentTime(video.currentTime);
-      });
-    }
-    video.currentTime = target;
-  };
-
-  const STEP_HOLD_INTERVAL_MS = 60;
-
-  const stopStepping = () => {
-    if (stepIntervalRef.current !== null) {
-      clearInterval(stepIntervalRef.current);
-      stepIntervalRef.current = null;
-    }
-  };
-
-  const startStepping = (direction: number) => {
-    const video = videoRef.current;
-    if (!video || !duration) return;
-    ensurePlaybackMode();
-    showControls();
-    stopStepping();
-    step(direction);
-    stepIntervalRef.current = window.setInterval(() => step(direction), STEP_HOLD_INTERVAL_MS);
-  };
-
-  const handleSeek = (value: number) => {
-    const video = videoRef.current;
-    if (!video || !duration) return;
-    ensurePlaybackMode();
-    showControls(true);
-    video.currentTime = value;
-    setCurrentTime(value);
-  };
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -254,12 +165,6 @@ export default function App() {
       }
     };
   }, [isPlaying, draftLine, selectedId]);
-
-  useEffect(() => {
-    return () => {
-      stopStepping();
-    };
-  }, []);
 
   const hasDuration = Boolean(duration && !Number.isNaN(duration));
   const hasVideo = Boolean(videoUrl);
