@@ -102,7 +102,13 @@ export function VideoSelectOverlay({ controlsVisible, onVideoSelect }: VideoSele
   const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1';
 
   return (
-    <div className="absolute left-[calc(1rem+var(--safe-top))] top-[calc(1rem+var(--safe-top))] z-[4]">
+    <div
+      className="absolute z-[4]"
+      style={{
+        left: 'max(1rem, var(--safe-left))',
+        top: 'max(1rem, var(--safe-top))',
+      }}
+    >
       <button
         className={cx(videoSelectSoloButton, 'transition-[opacity,transform] duration-200', fadeClass)}
         onClick={onVideoSelect}
@@ -225,12 +231,12 @@ export function ControlsSidebar({
   const drawModeEnabled = appMode === 'draw';
   const playbackOverlayStyle = videoBounds
     ? {
-        top: `calc(${videoBounds.y}px + 1rem + var(--safe-top))`,
-        left: `clamp(calc(1rem + 52px), calc(${videoBounds.x + videoBounds.width}px - 1rem), calc(100vw - 1rem))`,
+        top: `max(1rem, calc(${videoBounds.y}px + 1rem + var(--safe-top)))`,
+        left: `clamp(calc(1rem + 52px), calc(${videoBounds.x + videoBounds.width}px - 1rem), calc(100vw - max(1rem, var(--safe-right))))`,
       }
     : {
-        top: 'calc(1rem + var(--safe-top))',
-        right: 'calc(1rem + var(--safe-top))',
+        top: 'max(1rem, var(--safe-top))',
+        right: 'max(1rem, var(--safe-right))',
       };
 
   if (appMode === 'playback') {
@@ -264,6 +270,7 @@ export function ControlsSidebar({
         'pointer-events-none absolute right-0 top-0 bottom-0 z-[3] flex items-center justify-end px-1 transition-[opacity,transform] duration-200',
         fadeClass
       )}
+      style={{ paddingRight: 'max(1rem, var(--safe-right))' }}
     >
       <div className="pointer-events-auto flex flex-col items-end gap-2.5">
         {drawModeEnabled && (
