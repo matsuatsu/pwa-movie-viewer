@@ -18,6 +18,7 @@ export default function App() {
   const hideTimerRef = useRef<number | null>(null);
   const stepIntervalRef = useRef<number | null>(null);
   const draftLineRef = useRef<LineShape | null>(null);
+  const drawToastTimerRef = useRef<number | null>(null);
 
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -28,6 +29,7 @@ export default function App() {
   const [appMode, setAppMode] = useState<AppMode>('playback');
   const [controlsVisible, setControlsVisible] = useState(true);
   const [videoBounds, setVideoBounds] = useState<Rect | null>(null);
+  const [showDrawToast, setShowDrawToast] = useState(false);
 
   useViewportHeight();
   useCanvasSize(containerRef, canvasRef, videoRef, setVideoBounds);
@@ -139,6 +141,28 @@ export default function App() {
       if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
   }, [videoUrl]);
+
+  useEffect(() => {
+    if (drawToastTimerRef.current) {
+      clearTimeout(drawToastTimerRef.current);
+      drawToastTimerRef.current = null;
+    }
+    if (appMode === 'draw') {
+      setShowDrawToast(true);
+      drawToastTimerRef.current = window.setTimeout(() => {
+        setShowDrawToast(false);
+        drawToastTimerRef.current = null;
+      }, 1000);
+    } else {
+      setShowDrawToast(false);
+    }
+    return () => {
+      if (drawToastTimerRef.current) {
+        clearTimeout(drawToastTimerRef.current);
+        drawToastTimerRef.current = null;
+      }
+    };
+  }, [appMode]);
 
   const ensurePlaybackMode = useCallback(() => {
     setAppMode((prev) => {
@@ -353,6 +377,14 @@ export default function App() {
           onRedo={handleRedo}
           onDelete={deleteSelected}
         />
+
+        {showDrawToast && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="rounded-full bg-slate-950/80 px-4 py-2 text-sm font-semibold text-white shadow-lg">
+              描画モード
+            </div>
+          </div>
+        )}
       </main>
 
       <footer className="shrink-0 border-t border-slate-800/80 bg-slate-950/70 px-3 py-3 pb-[calc(0.75rem+var(--safe-bottom))] backdrop-blur">
