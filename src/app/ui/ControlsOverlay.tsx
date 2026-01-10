@@ -226,7 +226,7 @@ export function ControlsSidebar({
   const playbackOverlayStyle = videoBounds
     ? {
         top: `calc(${videoBounds.y}px + 1rem + var(--safe-top))`,
-        left: `calc(${videoBounds.x + videoBounds.width}px - 1rem)`,
+        left: `clamp(calc(1rem + 52px), calc(${videoBounds.x + videoBounds.width}px - 1rem), calc(100vw - 1rem))`,
       }
     : {
         top: 'calc(1rem + var(--safe-top))',
