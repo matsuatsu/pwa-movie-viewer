@@ -348,6 +348,7 @@ export default function App() {
           canUndo={history.length > 0}
           canRedo={redoStack.length > 0}
           canDelete={Boolean(selectedId)}
+          videoBounds={videoBounds}
           onAppModeToggle={handleAppModeToggle}
           onUndo={handleUndo}
           onRedo={handleRedo}
