@@ -229,10 +229,11 @@ export function ControlsSidebar({
 }: SidebarProps) {
   const fadeClass = controlsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2';
   const drawModeEnabled = appMode === 'draw';
+  const playbackButtonSize = 52;
   const playbackOverlayStyle = videoBounds
     ? {
-        top: `max(1rem, calc(${videoBounds.y}px + 1rem + var(--safe-top)))`,
-        left: `clamp(calc(1rem + 52px), calc(${videoBounds.x + videoBounds.width}px - 1rem), calc(100vw - max(1rem, var(--safe-right))))`,
+        top: `clamp(max(1rem, var(--safe-top)), calc(${videoBounds.y}px + 1rem + var(--safe-top)), calc(100vh - ${playbackButtonSize}px - max(1rem, var(--safe-bottom))))`,
+        left: `clamp(max(1rem, var(--safe-left)), calc(${videoBounds.x + videoBounds.width}px - ${playbackButtonSize}px - 1rem), calc(100vw - ${playbackButtonSize}px - max(1rem, var(--safe-right))))`,
       }
     : {
         top: 'max(1rem, var(--safe-top))',
@@ -243,9 +244,8 @@ export function ControlsSidebar({
     return (
       <div
         className={cx(
-          'pointer-events-none absolute z-[4] transition-[opacity,transform] duration-200',
-          fadeClass,
-          videoBounds ? '-translate-x-full' : ''
+          'pointer-events-none fixed z-[999] transition-[opacity,transform] duration-200',
+          fadeClass
         )}
         style={playbackOverlayStyle}
       >
