@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LineShape } from '../types';
 import { loadDrawing, saveDrawing } from '../storage';
-import { ControlsSidebar, FooterControls, HeaderTime } from './ui/ControlsOverlay';
+import { ControlsSidebar, FooterControls, TimeOverlay, VideoSelectOverlay } from './ui/ControlsOverlay';
 import { STEP_EPS } from './constants';
 import { useCanvasSize, type Rect } from './hooks/useCanvasSize';
 import { useViewportHeight } from './hooks/useViewportHeight';
@@ -299,15 +299,6 @@ export default function App() {
 
   return (
     <div className="flex h-[var(--viewport-height,100dvh)] w-screen flex-col overflow-hidden bg-[#0b1220] text-slate-200">
-      <header className="shrink-0 border-b border-slate-800/80 bg-slate-950/70 px-3 py-2.5 backdrop-blur">
-        <HeaderTime
-          controlsVisible={controlsVisible}
-          hasDuration={hasDuration}
-          currentTime={currentTime}
-          duration={duration}
-        />
-      </header>
-
       <main
         className="relative flex-1 touch-manipulation bg-[#0b1220]"
         ref={containerRef}
@@ -338,6 +329,18 @@ export default function App() {
           style={{ pointerEvents: videoUrl && isDrawMode ? 'auto' : 'none' }}
         />
 
+        <VideoSelectOverlay
+          controlsVisible={controlsVisible}
+          onVideoSelect={() => fileInputRef.current?.click()}
+        />
+
+        <TimeOverlay
+          controlsVisible={controlsVisible}
+          hasDuration={hasDuration}
+          currentTime={currentTime}
+          duration={duration}
+        />
+
         <ControlsSidebar
           controlsVisible={controlsVisible}
           appMode={appMode}
@@ -361,7 +364,6 @@ export default function App() {
           hasDuration={hasDuration}
           currentTime={currentTime}
           duration={duration}
-          onVideoSelect={() => fileInputRef.current?.click()}
           onStepBackStart={() => startStepping(-1)}
           onStepBackEnd={stopStepping}
           onCycleRate={cycleRate}

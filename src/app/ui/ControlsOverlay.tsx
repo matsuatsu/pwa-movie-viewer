@@ -15,11 +15,16 @@ import { formatTime } from '../utils/time';
 
 type AppMode = 'draw' | 'playback';
 
-type HeaderProps = {
+type TimeOverlayProps = {
   controlsVisible: boolean;
   hasDuration: boolean;
   currentTime: number;
   duration: number;
+};
+
+type VideoSelectOverlayProps = {
+  controlsVisible: boolean;
+  onVideoSelect: () => void;
 };
 
 type FooterProps = {
@@ -30,7 +35,6 @@ type FooterProps = {
   hasDuration: boolean;
   currentTime: number;
   duration: number;
-  onVideoSelect: () => void;
   onStepBackStart: () => void;
   onStepBackEnd: () => void;
   onCycleRate: () => void;
@@ -72,25 +76,43 @@ const standoutChipButton = cx(
   btnBase,
   'h-[44px] min-w-[52px] px-2 py-1.5 border-0 bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 shadow-[0_14px_32px_rgba(0,0,0,0.35)] hover:from-sky-400 hover:to-emerald-400'
 );
-const videoSelectSoloButton = cx(standoutChipButton, 'h-[70px] w-[70px] min-w-0 rounded-full p-0');
+const videoSelectSoloButton = cx(standoutChipButton, 'h-[52px] w-[52px] min-w-0 rounded-full p-0');
 
 const preventContextMenu = (event: React.MouseEvent) => event.preventDefault();
 
-export function HeaderTime({ controlsVisible, hasDuration, currentTime, duration }: HeaderProps) {
+export function TimeOverlay({ controlsVisible, hasDuration, currentTime, duration }: TimeOverlayProps) {
   const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1';
 
   return (
-    <div className={cx('flex w-full items-center justify-center transition-[opacity,transform] duration-200', fadeClass)}>
+    <div className="pointer-events-none absolute bottom-[calc(1.25rem+var(--safe-bottom))] left-1/2 z-[4] -translate-x-1/2">
       <div
         className={cx(
           btnBase,
-          'justify-center bg-slate-900/35 px-3 text-sm font-semibold shadow-none hover:bg-slate-900/50 hover:shadow-none'
+          'justify-center bg-slate-900/35 px-3 text-sm font-semibold shadow-none transition-[opacity,transform] duration-200',
+          fadeClass
         )}
       >
         <small className="tabular-nums text-slate-200">
           {formatTime(hasDuration ? currentTime : 0)} / {formatTime(hasDuration ? duration : 0)}
         </small>
       </div>
+    </div>
+  );
+}
+
+export function VideoSelectOverlay({ controlsVisible, onVideoSelect }: VideoSelectOverlayProps) {
+  const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1';
+
+  return (
+    <div className="absolute left-[calc(1rem+var(--safe-top))] top-[calc(1rem+var(--safe-top))] z-[4]">
+      <button
+        className={cx(videoSelectSoloButton, 'transition-[opacity,transform] duration-200', fadeClass)}
+        onClick={onVideoSelect}
+        aria-label="動画を選択"
+        title="動画を選択"
+      >
+        <FolderOpen aria-hidden size={18} />
+      </button>
     </div>
   );
 }
@@ -103,7 +125,6 @@ export function FooterControls({
   hasDuration,
   currentTime,
   duration,
-  onVideoSelect,
   onStepBackStart,
   onStepBackEnd,
   onCycleRate,
@@ -119,14 +140,6 @@ export function FooterControls({
       className={cx('flex w-full flex-col items-center gap-2.5 transition-[opacity,transform] duration-200', fadeClass)}
     >
       <div className="flex flex-wrap items-center justify-center gap-2.5">
-        <button
-          className={cx(standoutChipButton, hasVideo ? 'flex-row gap-2' : 'h-[70px] w-[70px] min-w-0 rounded-full')}
-          onClick={onVideoSelect}
-          aria-label="動画を選択"
-          title="動画を選択"
-        >
-          <FolderOpen aria-hidden size={18} />
-        </button>
         <button
           className={chipButton}
           onPointerDown={onStepBackStart}
