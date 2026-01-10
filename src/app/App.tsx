@@ -25,7 +25,7 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [appMode, setAppMode] = useState<AppMode>('draw');
+  const [appMode, setAppMode] = useState<AppMode>('playback');
   const [controlsVisible, setControlsVisible] = useState(true);
   const [videoBounds, setVideoBounds] = useState<Rect | null>(null);
 
