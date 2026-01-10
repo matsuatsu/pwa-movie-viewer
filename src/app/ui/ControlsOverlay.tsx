@@ -9,11 +9,10 @@ import {
   StepForward,
   Trash2,
   Undo2,
+  X,
 } from 'lucide-react';
 import { cx } from '../utils/classnames';
 import { formatTime } from '../utils/time';
-import type { Rect } from '../hooks/useCanvasSize';
-
 type AppMode = 'draw' | 'playback';
 
 type TimeOverlayProps = {
@@ -52,7 +51,6 @@ type SidebarProps = {
   canUndo: boolean;
   canRedo: boolean;
   canDelete: boolean;
-  videoBounds: Rect | null;
   onAppModeToggle: () => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -221,59 +219,36 @@ export function ControlsSidebar({
   canUndo,
   canRedo,
   canDelete,
-  videoBounds,
   onAppModeToggle,
   onUndo,
   onRedo,
   onDelete,
 }: SidebarProps) {
-  const fadeClass = controlsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2';
-  const drawModeEnabled = appMode === 'draw';
-  const playbackButtonSize = 52;
-  const playbackOverlayStyle = videoBounds
-    ? {
-        top: `clamp(max(1rem, var(--safe-top)), calc(${videoBounds.y}px + 1rem + var(--safe-top)), calc(100vh - ${playbackButtonSize}px - max(1rem, var(--safe-bottom))))`,
-        left: `clamp(max(1rem, var(--safe-left)), calc(${videoBounds.x + videoBounds.width}px - ${playbackButtonSize}px - 1rem), calc(100vw - ${playbackButtonSize}px - max(1rem, var(--safe-right))))`,
-      }
-    : {
-        top: 'max(1rem, var(--safe-top))',
-        right: 'max(1rem, var(--safe-right))',
-      };
-
-  if (appMode === 'playback') {
-    return (
-      <div
-        className={cx(
-          'pointer-events-none fixed z-[999] transition-[opacity,transform] duration-200',
-          fadeClass
-        )}
-        style={playbackOverlayStyle}
-      >
-        <div className="pointer-events-auto">
-          <button
-            className={videoSelectSoloButton}
-            onClick={onAppModeToggle}
-            disabled={!hasVideo}
-            aria-label="視聴モードと描画モードを切り替え"
-            title="視聴モードと描画モードを切り替え"
-          >
-            <Brush aria-hidden size={18} />
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2';
+  const isDrawMode = appMode === 'draw';
 
   return (
     <div
       className={cx(
-        'pointer-events-none absolute right-0 top-0 bottom-0 z-[3] flex items-center justify-end px-1 transition-[opacity,transform] duration-200',
+        'pointer-events-none fixed z-[999] transition-[opacity,transform] duration-200',
         fadeClass
       )}
-      style={{ paddingRight: 'max(1rem, var(--safe-right))' }}
+      style={{
+        top: 'max(1rem, var(--safe-top))',
+        right: 'max(1rem, var(--safe-right))',
+      }}
     >
       <div className="pointer-events-auto flex flex-col items-end gap-2.5">
-        {drawModeEnabled && (
+        <button
+          className={videoSelectSoloButton}
+          onClick={onAppModeToggle}
+          disabled={!hasVideo}
+          aria-label={isDrawMode ? '描画モードを終了' : '描画モードへ移行'}
+          title={isDrawMode ? '描画モードを終了' : '描画モードへ移行'}
+        >
+          {isDrawMode ? <X aria-hidden size={18} /> : <Brush aria-hidden size={18} />}
+        </button>
+        {isDrawMode && (
           <>
             <button className={sidebarButton} onClick={onDelete} disabled={!canDelete} aria-label="選択を削除">
               <Trash2 aria-hidden size={18} />
