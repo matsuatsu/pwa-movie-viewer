@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LineShape } from '../types';
 import { loadDrawing, saveDrawing } from '../storage';
 import { ControlsSidebar, FooterControls, TimeOverlay, VideoSelectOverlay } from './ui/ControlsOverlay';
+import { Toast } from './ui/Toast';
 import { STEP_EPS } from './constants';
 import { useCanvasSize, type Rect } from './hooks/useCanvasSize';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import { useDrawCanvas } from './hooks/useDrawCanvas';
 import { useDrawingState } from './hooks/useDrawingState';
+import { useToast } from './hooks/useToast';
 
 type AppMode = 'draw' | 'playback';
 
@@ -18,8 +20,6 @@ export default function App() {
   const hideTimerRef = useRef<number | null>(null);
   const stepIntervalRef = useRef<number | null>(null);
   const draftLineRef = useRef<LineShape | null>(null);
-  const drawToastTimerRef = useRef<number | null>(null);
-
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [duration, setDuration] = useState(0);
@@ -29,7 +29,9 @@ export default function App() {
   const [appMode, setAppMode] = useState<AppMode>('playback');
   const [controlsVisible, setControlsVisible] = useState(true);
   const [videoBounds, setVideoBounds] = useState<Rect | null>(null);
-  const [showDrawToast, setShowDrawToast] = useState(false);
+  const previousAppModeRef = useRef<AppMode>(appMode);
+
+  const { message: toastMessage, showToast } = useToast({ durationMs: 1000 });
 
   useViewportHeight();
   useCanvasSize(containerRef, canvasRef, videoRef, setVideoBounds);
@@ -115,6 +117,7 @@ export default function App() {
       } else {
         resetDrawing([]);
       }
+      showToast('視聴モード');
     };
     const updateTime = () => setCurrentTime(video.currentTime);
     const handlePlay = () => setIsPlaying(true);
@@ -129,7 +132,7 @@ export default function App() {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, [playbackRate, resetDrawing, videoKey]);
+  }, [playbackRate, resetDrawing, showToast, videoKey]);
 
   useEffect(() => {
     if (!videoKey) return;
@@ -143,26 +146,13 @@ export default function App() {
   }, [videoUrl]);
 
   useEffect(() => {
-    if (drawToastTimerRef.current) {
-      clearTimeout(drawToastTimerRef.current);
-      drawToastTimerRef.current = null;
-    }
     if (appMode === 'draw') {
-      setShowDrawToast(true);
-      drawToastTimerRef.current = window.setTimeout(() => {
-        setShowDrawToast(false);
-        drawToastTimerRef.current = null;
-      }, 1000);
-    } else {
-      setShowDrawToast(false);
+      showToast('描画モード');
+    } else if (previousAppModeRef.current === 'draw') {
+      showToast('視聴モード');
     }
-    return () => {
-      if (drawToastTimerRef.current) {
-        clearTimeout(drawToastTimerRef.current);
-        drawToastTimerRef.current = null;
-      }
-    };
-  }, [appMode]);
+    previousAppModeRef.current = appMode;
+  }, [appMode, showToast]);
 
   const ensurePlaybackMode = useCallback(() => {
     setAppMode((prev) => {
@@ -378,13 +368,7 @@ export default function App() {
           onDelete={deleteSelected}
         />
 
-        {showDrawToast && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="rounded-full bg-slate-950/80 px-4 py-2 text-sm font-semibold text-white shadow-lg">
-              描画モード
-            </div>
-          </div>
-        )}
+        <Toast message={toastMessage} />
       </main>
 
       <footer className="shrink-0 border-t border-slate-800/80 bg-slate-950/70 px-3 py-3 pb-[calc(0.75rem+var(--safe-bottom))] backdrop-blur">
