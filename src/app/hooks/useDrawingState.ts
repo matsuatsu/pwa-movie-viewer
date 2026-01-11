@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { DrawingAction, LineShape, Point } from '../../types';
+import { AppMode, DrawingAction, LineShape, Point } from '../../types';
 import { HANDLE_HIT_RADIUS, HISTORY_LIMIT, LINE_HIT_THRESHOLD } from '../constants';
 import { clampPoint, distanceToSegment } from '../utils/geometry';
 
-type AppMode = 'draw' | 'playback';
 type DragType = 'p1' | 'p2' | 'move';
 
 type EditSession = {
@@ -306,6 +305,5 @@ export function useDrawingState({
     deleteSelected,
     resetDrawing,
     clearInteraction,
-    setLines,
   };
 }
