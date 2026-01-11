@@ -35,12 +35,10 @@ type FooterProps = {
   hasDuration: boolean;
   currentTime: number;
   duration: number;
-  onStepBackStart: () => void;
-  onStepBackEnd: () => void;
+  onStepBack: () => void;
   onCycleRate: () => void;
   onPlayPause: () => void;
-  onStepForwardStart: () => void;
-  onStepForwardEnd: () => void;
+  onStepForward: () => void;
   onSeek: (value: number) => void;
 };
 
@@ -127,12 +125,10 @@ export function FooterControls({
   hasDuration,
   currentTime,
   duration,
-  onStepBackStart,
-  onStepBackEnd,
+  onStepBack,
   onCycleRate,
   onPlayPause,
-  onStepForwardStart,
-  onStepForwardEnd,
+  onStepForward,
   onSeek,
 }: FooterProps) {
   const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2';
@@ -144,10 +140,7 @@ export function FooterControls({
       <div className="flex flex-wrap items-center justify-center gap-2.5">
         <button
           className={chipButton}
-          onPointerDown={onStepBackStart}
-          onPointerUp={onStepBackEnd}
-          onPointerLeave={onStepBackEnd}
-          onPointerCancel={onStepBackEnd}
+          onClick={onStepBack}
           onContextMenu={preventContextMenu}
           disabled={!hasVideo}
           aria-label="1フレーム戻す"
@@ -178,10 +171,7 @@ export function FooterControls({
         </button>
         <button
           className={chipButton}
-          onPointerDown={onStepForwardStart}
-          onPointerUp={onStepForwardEnd}
-          onPointerLeave={onStepForwardEnd}
-          onPointerCancel={onStepForwardEnd}
+          onClick={onStepForward}
           onContextMenu={preventContextMenu}
           disabled={!hasVideo}
           aria-label="1フレーム進める"
