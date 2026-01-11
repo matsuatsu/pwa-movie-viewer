@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LineShape } from '../types';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AppMode, LineShape } from '../types';
 import { loadDrawing, saveDrawing } from '../storage';
 import { ControlsSidebar, FooterControls, TimeOverlay, VideoSelectOverlay } from './ui/ControlsOverlay';
 import { Toast } from './ui/Toast';
@@ -10,8 +10,6 @@ import { useDrawCanvas } from './hooks/useDrawCanvas';
 import { useDrawingState } from './hooks/useDrawingState';
 import { useToast } from './hooks/useToast';
 
-type AppMode = 'draw' | 'playback';
-
 export default function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -20,7 +18,7 @@ export default function App() {
   const hideTimerRef = useRef<number | null>(null);
   const draftLineRef = useRef<LineShape | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoKey, setVideoKey] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -76,11 +74,6 @@ export default function App() {
   }, [draftLine]);
 
   useDrawCanvas(canvasRef, lines, draftLine, selectedId, videoBounds);
-
-  const videoKey = useMemo(
-    () => (videoFile ? `${videoFile.name}:${videoFile.size}:${videoFile.lastModified}` : null),
-    [videoFile]
-  );
 
   useEffect(() => {
     const video = videoRef.current;
@@ -222,7 +215,7 @@ export default function App() {
     showControls(true);
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     const url = URL.createObjectURL(file);
-    setVideoFile(file);
+    setVideoKey(`${file.name}:${file.size}:${file.lastModified}`);
     setVideoUrl(url);
     resetDrawing([]);
   };

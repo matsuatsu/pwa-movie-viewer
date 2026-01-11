@@ -11,9 +11,9 @@ import {
   Undo2,
   X,
 } from 'lucide-react';
+import type { AppMode } from '../../types';
 import { cx } from '../utils/classnames';
 import { formatTime } from '../utils/time';
-type AppMode = 'draw' | 'playback';
 
 type TimeOverlayProps = {
   controlsVisible: boolean;

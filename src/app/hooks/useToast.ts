@@ -7,20 +7,11 @@ type ToastOptions = {
 type ToastController = {
   message: string | null;
   showToast: (message: string) => void;
-  clearToast: () => void;
 };
 
 export function useToast({ durationMs = 1000 }: ToastOptions = {}): ToastController {
   const [message, setMessage] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
-
-  const clearToast = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    setMessage(null);
-  }, []);
 
   const showToast = useCallback(
     (nextMessage: string) => {
@@ -37,7 +28,15 @@ export function useToast({ durationMs = 1000 }: ToastOptions = {}): ToastControl
     [durationMs]
   );
 
-  useEffect(() => clearToast, [clearToast]);
+  useEffect(
+    () => () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    },
+    []
+  );
 
-  return { message, showToast, clearToast };
+  return { message, showToast };
 }

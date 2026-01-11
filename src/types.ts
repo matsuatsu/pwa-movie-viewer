@@ -8,6 +8,8 @@ export type LineShape = {
   createdAt: number;
 };
 
+export type AppMode = 'draw' | 'playback';
+
 export type DrawingAction =
   | { type: 'add'; line: LineShape }
   | { type: 'delete'; line: LineShape }
