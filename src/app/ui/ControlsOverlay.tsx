@@ -78,12 +78,13 @@ export function TimeOverlay({ controlsVisible, hasDuration, currentTime, duratio
   const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1';
 
   return (
-    <div className="pointer-events-none absolute bottom-[calc(1.25rem+var(--safe-bottom))] left-1/2 z-[4] -translate-x-1/2">
+    <div className="pointer-events-none absolute bottom-[calc(1rem+var(--safe-bottom))] left-1/2 z-[4] -translate-x-1/2">
       <div
         className={cx(
           btnBase,
           'justify-center bg-slate-900/35 px-3 text-sm font-semibold shadow-none transition-[opacity,transform] duration-200',
-          fadeClass
+          fadeClass,
+          "min-h-0"
         )}
       >
         <small className="tabular-nums text-slate-200">
@@ -187,7 +188,7 @@ export function FooterControls({
         )}
       >
         <input
-          className="tw-range w-full"
+          className="w-full"
           type="range"
           min={0}
           max={hasDuration ? duration : 0}
