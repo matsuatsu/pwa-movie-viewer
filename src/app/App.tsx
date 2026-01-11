@@ -16,7 +16,6 @@ export default function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
-  const stepIntervalRef = useRef<number | null>(null);
   const draftLineRef = useRef<LineShape | null>(null);
   const drawToastTimerRef = useRef<number | null>(null);
 
@@ -216,24 +215,6 @@ export default function App() {
     video.currentTime = target;
   };
 
-  const STEP_HOLD_INTERVAL_MS = 60;
-
-  const stopStepping = () => {
-    if (stepIntervalRef.current !== null) {
-      clearInterval(stepIntervalRef.current);
-      stepIntervalRef.current = null;
-    }
-  };
-
-  const startStepping = (direction: number) => {
-    const video = videoRef.current;
-    if (!video || !duration) return;
-    ensurePlaybackMode();
-    showControls();
-    stopStepping();
-    step(direction);
-    stepIntervalRef.current = window.setInterval(() => step(direction), STEP_HOLD_INTERVAL_MS);
-  };
 
   const handleSeek = (value: number) => {
     const video = videoRef.current;
@@ -279,12 +260,6 @@ export default function App() {
       }
     };
   }, [isPlaying, draftLine, selectedId]);
-
-  useEffect(() => {
-    return () => {
-      stopStepping();
-    };
-  }, []);
 
   const hasDuration = Boolean(duration && !Number.isNaN(duration));
   const hasVideo = Boolean(videoUrl);
@@ -396,12 +371,10 @@ export default function App() {
           hasDuration={hasDuration}
           currentTime={currentTime}
           duration={duration}
-          onStepBackStart={() => startStepping(-1)}
-          onStepBackEnd={stopStepping}
+          onStepBack={() => step(-1)}
           onCycleRate={cycleRate}
           onPlayPause={handlePlayPause}
-          onStepForwardStart={() => startStepping(1)}
-          onStepForwardEnd={stopStepping}
+          onStepForward={() => step(1)}
           onSeek={handleSeek}
         />
       </footer>
