@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppMode, LineShape } from '../types';
 import { loadDrawing, saveDrawing } from '../storage';
-import { ControlsSidebar, FooterControls, TimeOverlay, VideoSelectOverlay } from './ui/ControlsOverlay';
+import { ControlsSidebar, FooterControls, TimeOverlay } from './ui/ControlsOverlay';
 import { Toast } from './ui/Toast';
 import { STEP_EPS } from './constants';
 import { useCanvasSize, type Rect } from './hooks/useCanvasSize';
@@ -311,26 +311,23 @@ export default function App() {
           style={{ pointerEvents: videoUrl && isDrawMode ? 'auto' : 'none' }}
         />
 
-        <VideoSelectOverlay
-          controlsVisible={controlsVisible}
-          onVideoSelect={() => fileInputRef.current?.click()}
-        />
-
         <TimeOverlay
           controlsVisible={controlsVisible}
           hasDuration={hasDuration}
           currentTime={currentTime}
           duration={duration}
+          hasVideo={hasVideo}
+          appMode={appMode}
+          onVideoSelect={() => fileInputRef.current?.click()}
+          onAppModeToggle={handleAppModeToggle}
         />
 
         <ControlsSidebar
           controlsVisible={controlsVisible}
           appMode={appMode}
-          hasVideo={hasVideo}
           canUndo={history.length > 0}
           canRedo={redoStack.length > 0}
           canDelete={Boolean(selectedId)}
-          onAppModeToggle={handleAppModeToggle}
           onUndo={handleUndo}
           onRedo={handleRedo}
           onDelete={deleteSelected}

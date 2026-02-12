@@ -20,11 +20,10 @@ type TimeOverlayProps = {
   hasDuration: boolean;
   currentTime: number;
   duration: number;
-};
-
-type VideoSelectOverlayProps = {
-  controlsVisible: boolean;
+  hasVideo: boolean;
+  appMode: AppMode;
   onVideoSelect: () => void;
+  onAppModeToggle: () => void;
 };
 
 type FooterProps = {
@@ -45,11 +44,9 @@ type FooterProps = {
 type SidebarProps = {
   controlsVisible: boolean;
   appMode: AppMode;
-  hasVideo: boolean;
   canUndo: boolean;
   canRedo: boolean;
   canDelete: boolean;
-  onAppModeToggle: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onDelete: () => void;
@@ -74,46 +71,56 @@ const videoSelectSoloButton = cx(standoutChipButton, 'h-[52px] w-[52px] min-w-0 
 
 const preventContextMenu = (event: React.MouseEvent) => event.preventDefault();
 
-export function TimeOverlay({ controlsVisible, hasDuration, currentTime, duration }: TimeOverlayProps) {
+export function TimeOverlay({
+  controlsVisible,
+  hasDuration,
+  currentTime,
+  duration,
+  hasVideo,
+  appMode,
+  onVideoSelect,
+  onAppModeToggle,
+}: TimeOverlayProps) {
   const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1';
-
-  return (
-    <div className="pointer-events-none absolute bottom-[calc(1rem+var(--safe-bottom))] left-1/2 z-[4] -translate-x-1/2">
-      <div
-        className={cx(
-          btnBase,
-          'justify-center bg-slate-900/35 px-3 text-sm font-semibold shadow-none transition-[opacity,transform] duration-200',
-          fadeClass,
-          "min-h-0"
-        )}
-      >
-        <small className="tabular-nums text-slate-200">
-          {formatTime(hasDuration ? currentTime : 0)} / {formatTime(hasDuration ? duration : 0)}
-        </small>
-      </div>
-    </div>
-  );
-}
-
-export function VideoSelectOverlay({ controlsVisible, onVideoSelect }: VideoSelectOverlayProps) {
-  const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1';
+  const isDrawMode = appMode === 'draw';
 
   return (
     <div
-      className="absolute z-[4]"
+      className="pointer-events-none absolute bottom-[calc(1rem+var(--safe-bottom))] z-[4] w-full px-3"
       style={{
-        left: 'max(1rem, var(--safe-left))',
-        top: 'max(1rem, var(--safe-top))',
+        paddingLeft: 'max(0.75rem, var(--safe-left))',
+        paddingRight: 'max(0.75rem, var(--safe-right))',
       }}
     >
-      <button
-        className={cx(videoSelectSoloButton, 'transition-[opacity,transform] duration-200', fadeClass)}
-        onClick={onVideoSelect}
-        aria-label="動画を選択"
-        title="動画を選択"
-      >
-        <FolderOpen aria-hidden size={18} />
-      </button>
+      <div className={cx('pointer-events-auto flex w-full items-center justify-between transition-[opacity,transform] duration-200', fadeClass)}>
+        <button
+          className={videoSelectSoloButton}
+          onClick={onVideoSelect}
+          aria-label="動画を選択"
+          title="動画を選択"
+        >
+          <FolderOpen aria-hidden size={18} />
+        </button>
+        <div
+          className={cx(
+            btnBase,
+            'min-h-0 justify-center bg-slate-900/35 px-3 text-sm font-semibold shadow-none hover:bg-slate-900/35 hover:shadow-none'
+          )}
+        >
+          <small className="tabular-nums text-slate-200">
+            {formatTime(hasDuration ? currentTime : 0)} / {formatTime(hasDuration ? duration : 0)}
+          </small>
+        </div>
+        <button
+          className={videoSelectSoloButton}
+          onClick={onAppModeToggle}
+          disabled={!hasVideo}
+          aria-label={isDrawMode ? '描画モードを終了' : '描画モードへ移行'}
+          title={isDrawMode ? '描画モードを終了' : '描画モードへ移行'}
+        >
+          {isDrawMode ? <X aria-hidden size={18} /> : <Brush aria-hidden size={18} />}
+        </button>
+      </div>
     </div>
   );
 }
@@ -206,17 +213,17 @@ export function FooterControls({
 export function ControlsSidebar({
   controlsVisible,
   appMode,
-  hasVideo,
   canUndo,
   canRedo,
   canDelete,
-  onAppModeToggle,
   onUndo,
   onRedo,
   onDelete,
 }: SidebarProps) {
   const fadeClass = controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2';
   const isDrawMode = appMode === 'draw';
+
+  if (!isDrawMode) return null;
 
   return (
     <div
@@ -230,28 +237,15 @@ export function ControlsSidebar({
       }}
     >
       <div className="pointer-events-auto flex flex-col items-end gap-2.5">
-        <button
-          className={videoSelectSoloButton}
-          onClick={onAppModeToggle}
-          disabled={!hasVideo}
-          aria-label={isDrawMode ? '描画モードを終了' : '描画モードへ移行'}
-          title={isDrawMode ? '描画モードを終了' : '描画モードへ移行'}
-        >
-          {isDrawMode ? <X aria-hidden size={18} /> : <Brush aria-hidden size={18} />}
+        <button className={sidebarButton} onClick={onDelete} disabled={!canDelete} aria-label="選択を削除">
+          <Trash2 aria-hidden size={18} />
         </button>
-        {isDrawMode && (
-          <>
-            <button className={sidebarButton} onClick={onDelete} disabled={!canDelete} aria-label="選択を削除">
-              <Trash2 aria-hidden size={18} />
-            </button>
-            <button className={sidebarButton} onClick={onUndo} disabled={!canUndo} aria-label="元に戻す">
-              <Undo2 aria-hidden size={18} />
-            </button>
-            <button className={sidebarButton} onClick={onRedo} disabled={!canRedo} aria-label="やり直す">
-              <Redo2 aria-hidden size={18} />
-            </button>
-          </>
-        )}
+        <button className={sidebarButton} onClick={onUndo} disabled={!canUndo} aria-label="元に戻す">
+          <Undo2 aria-hidden size={18} />
+        </button>
+        <button className={sidebarButton} onClick={onRedo} disabled={!canRedo} aria-label="やり直す">
+          <Redo2 aria-hidden size={18} />
+        </button>
       </div>
     </div>
   );
